@@ -1,0 +1,51 @@
+{
+    "configurations": [
+        {
+            "type": "node-terminal",
+            "name": "Frida - Attach to Notepad",
+            "request": "launch",
+            "command": "pwsh.exe -ExecutionPolicy Bypass -File .\\run-frida.ps1",
+            "cwd": "${workspaceFolder}",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "type": "node-terminal",
+            "name": "Frida - Spawn Notepad",
+            "request": "launch",
+            "command": "pwsh.exe -ExecutionPolicy Bypass -File .\\run-frida.ps1 -Spawn",
+            "cwd": "${workspaceFolder}",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "type": "node-terminal",
+            "name": "Frida - Custom Target",
+            "request": "launch",
+            "command": "pwsh.exe -ExecutionPolicy Bypass -File .\\run-frida.ps1 -Target \"${input:targetProcess}\"",
+            "cwd": "${workspaceFolder}",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "targetProcess",
+            "description": "Target process name (e.g., notepad.exe, calculator.exe)",
+            "default": "notepad.exe",
+            "type": "promptString"
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "module": "Node16",
+    "strict": true,
+    "noEmit": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": [
+        "*"
+      ],
+      "@/types": [
+        "types"
+      ],
+      "@/core": [
+        "core"
+      ],
+      "@/monitors": [
+        "monitors"
+      ],
+      "@/logging": [
+        "logging"
+      ],
+      "@/utils": [
+        "utils"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

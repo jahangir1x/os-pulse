@@ -1,0 +1,56 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Agent",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "build"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": "$tsc"
+        },
+        {
+            "label": "Frida - Attach to Process",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-Command",
+                "& { ..\\..\\.\\.pyenv\\Scripts\\Activate.ps1; frida -n notepad.exe -l .\\_agent.js --no-pause }"
+            ],
+            "group": "test",
+            "dependsOn": "Build Agent",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Frida - Spawn Process",
+            "type": "shell",
+            "command": "pwsh.exe",
+            "args": [
+                "-Command",
+                "& { ..\\..\\.\\.pyenv\\Scripts\\Activate.ps1; frida -f C:\\\\Windows\\\\System32\\\\notepad.exe -l .\\_agent.js --no-pause }"
+            ],
+            "group": "test",
+            "dependsOn": "Build Agent",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        }
+    ]
+}
