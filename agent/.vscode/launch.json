@@ -1,11 +1,23 @@
 {
     "configurations": [
         {
+            "type": "debugpy",
+            "name": "Python Debugger: project with args",
+            "request": "launch",
+            "program": "controller/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "attach",
+                "--process-name",
+                "notepad.exe"
+            ]
+        },
+        {
             "type": "node-terminal",
             "name": "Frida - Attach to Notepad",
             "request": "launch",
             "command": "pwsh.exe -ExecutionPolicy Bypass -File .\\run-frida.ps1",
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/injector",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -18,7 +30,7 @@
             "name": "Frida - Spawn Notepad",
             "request": "launch",
             "command": "pwsh.exe -ExecutionPolicy Bypass -File .\\run-frida.ps1 -Spawn",
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/injector",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -31,7 +43,7 @@
             "name": "Frida - Custom Target",
             "request": "launch",
             "command": "pwsh.exe -ExecutionPolicy Bypass -File .\\run-frida.ps1 -Target \"${input:targetProcess}\"",
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/injector",
             "presentation": {
                 "echo": true,
                 "reveal": "always",

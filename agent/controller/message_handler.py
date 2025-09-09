@@ -1,13 +1,13 @@
 """
 Message handlers for processing events from the Frida injector
 """
+import asyncio
 import json
 from datetime import datetime
 from typing import Dict, Any, Optional
 from colorama import Fore, Style, init
 
 from config import config
-from api_client import get_api_client
 
 # Initialize colorama for colored output
 init(autoreset=True)
@@ -20,12 +20,45 @@ class MessageHandler:
         self.session_info = {}
         self.event_count = 0
         self.api_enabled = enable_api if enable_api is not None else config.api_enabled
-        self.api_client = get_api_client() if self.api_enabled else None
+        self.api_client = None  # Will be initialized asynchronously
         
-        if self.api_enabled and self.api_client:
+        if self.api_enabled:
             print(f"{Fore.CYAN}[HANDLER] API integration enabled - Endpoint: {config.api_endpoint}")
+            # Initialize API client asynchronously
+            asyncio.create_task(self._init_api_client())
         else:
             print(f"{Fore.YELLOW}[HANDLER] API integration disabled")
+    
+    async def _init_api_client(self):
+        """Initialize API client asynchronously"""
+        try:
+            from api_client import get_api_client
+            self.api_client = await get_api_client()
+            if self.api_client:
+                print(f"{Fore.GREEN}[HANDLER] API client initialized successfully")
+            else:
+                print(f"{Fore.YELLOW}[HANDLER] API client initialization failed")
+        except Exception as e:
+            print(f"{Fore.RED}[HANDLER] Error initializing API client: {e}")
+    
+    def _send_to_api_async(self, event_type: str, data: Dict[str, Any]):
+        """Send event to API asynchronously (non-blocking)"""
+        if self.api_client:
+            try:
+                if event_type == 'file_operation':
+                    asyncio.create_task(self.api_client.send_file_operation(
+                        data.get('operation', 'unknown'),
+                        data
+                    ))
+                elif event_type == 'process_creation':
+                    asyncio.create_task(self.api_client.send_process_creation(
+                        data.get('operation', 'unknown'),
+                        data
+                    ))
+                else:
+                    asyncio.create_task(self.api_client.send_event(event_type, data))
+            except Exception as e:
+                print(f"{Fore.RED}[API] Error sending {event_type}: {e}")
         
     def handle_message(self, message: Dict[str, Any], data: bytes = None) -> None:
         """Process incoming message from Frida injector"""
@@ -68,12 +101,7 @@ class MessageHandler:
         print(f"{Fore.GREEN}{'='*60}\n")
         
         # Send to API
-        if self.api_client:
-            self.api_client.send_event_async(
-                event_type="session_start",
-                event_data=data,
-                metadata={"source": "os-pulse-injector", "handler": "session_start"}
-            )
+        self._send_to_api_async('session_start', data)
     
     def _handle_file_operation(self, message: Dict[str, Any]) -> None:
         """Handle file operation events"""
@@ -99,29 +127,8 @@ class MessageHandler:
         print(f"{Fore.MAGENTA}Process: {metadata.get('processName', 'Unknown')} (PID: {metadata.get('processId', 'Unknown')})")
         
         # Send to API
-        if self.api_client:
-            api_data = {
-                "operation": operation,
-                "file_path": data.get('filePath'),
-                "bytes_transferred": data.get('bytesTransferred', 0),
-                "content": data.get('content'),
-                "timestamp": data.get('timestamp'),
-                "process_info": {
-                    "name": metadata.get('processName'),
-                    "pid": metadata.get('processId'),
-                    "session_id": metadata.get('sessionId')
-                }
-            }
-            
-            self.api_client.add_to_batch(
-                event_type="file_operation",
-                event_data=api_data,
-                metadata={
-                    "operation": operation,
-                    "source": "os-pulse-injector",
-                    "handler": "file_operation"
-                }
-            )
+        combined_data = {**data, 'operation': operation, 'metadata': metadata}
+        self._send_to_api_async('file_operation', combined_data)
     
     def _handle_process_creation(self, message: Dict[str, Any]) -> None:
         """Handle process creation events"""
@@ -159,36 +166,8 @@ class MessageHandler:
         print(f"{Fore.MAGENTA}Source Process: {metadata.get('processName', 'Unknown')} (PID: {metadata.get('processId', 'Unknown')})")
         
         # Send to API
-        if self.api_client:
-            api_data = {
-                "operation": operation,
-                "status": status,
-                "status_text": status_text,
-                "image_path": data.get('imagePath'),
-                "command_line": data.get('commandLine'),
-                "current_directory": data.get('currentDirectory'),
-                "process_handle": data.get('processHandle'),
-                "thread_handle": data.get('threadHandle'),
-                "parent_process": data.get('parentProcess'),
-                "flags": data.get('flags'),
-                "section_handle": data.get('sectionHandle'),
-                "timestamp": data.get('timestamp'),
-                "source_process": {
-                    "name": metadata.get('processName'),
-                    "pid": metadata.get('processId'),
-                    "session_id": metadata.get('sessionId')
-                }
-            }
-            
-            self.api_client.add_to_batch(
-                event_type="process_creation",
-                event_data=api_data,
-                metadata={
-                    "operation": operation,
-                    "source": "os-pulse-injector",
-                    "handler": "process_creation"
-                }
-            )
+        combined_data = {**data, 'operation': operation, 'metadata': metadata}
+        self._send_to_api_async('process_creation', combined_data)
     
     def _handle_pong(self, message: Dict[str, Any]) -> None:
         """Handle pong response"""
@@ -218,41 +197,49 @@ class MessageHandler:
         }
         
         if self.api_client:
-            stats['api_stats'] = self.api_client.get_statistics()
+            try:
+                # Use asyncio to run the async method
+                import asyncio
+                loop = asyncio.get_event_loop()
+                api_stats = loop.run_until_complete(self.api_client.get_stats())
+                stats['api_stats'] = api_stats
+            except Exception as e:
+                stats['api_stats'] = {'error': str(e)}
         
         return stats
     
-    def flush_api_events(self) -> bool:
-        """Flush any pending API events"""
-        if self.api_client:
-            return self.api_client.flush_batch()
-        return True
-    
-    def test_api_connection(self) -> bool:
-        """Test API connection"""
-        if self.api_client:
-            return self.api_client.test_connection()
-        return False
-    
-    def enable_api(self, endpoint: str = None, api_key: str = None) -> None:
+    async def enable_api(self, endpoint: str = None, api_key: str = None) -> None:
         """Enable API integration"""
-        from api_client import initialize_api_client
-        
         self.api_enabled = True
-        self.api_client = initialize_api_client(endpoint, api_key)
+        await self._init_api_client()
         print(f"{Fore.GREEN}[HANDLER] API integration enabled")
     
-    def disable_api(self) -> None:
+    async def disable_api(self) -> None:
         """Disable API integration"""
         if self.api_client:
-            self.api_client.shutdown()
+            await self.api_client.disconnect()
         
         self.api_enabled = False
         self.api_client = None
         print(f"{Fore.YELLOW}[HANDLER] API integration disabled")
     
-    def shutdown(self) -> None:
+    async def shutdown(self) -> None:
         """Shutdown message handler and API client"""
         if self.api_client:
             print(f"{Fore.CYAN}[HANDLER] Shutting down API client...")
-            self.api_client.shutdown()
+            await self.api_client.disconnect()
+    
+    async def flush_api_events(self) -> int:
+        """Flush any pending API events"""
+        if self.api_client:
+            return await self.api_client.flush_events()
+        return 0
+    
+    async def test_api_connection(self) -> bool:
+        """Test API connection"""
+        if self.api_client:
+            try:
+                return await self.api_client.test_connection()
+            except Exception:
+                return False
+        return False

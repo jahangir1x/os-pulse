@@ -3,311 +3,302 @@ API client for sending monitoring events to external services
 """
 import asyncio
 import json
-import time
-from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-from concurrent.futures import ThreadPoolExecutor
-import threading
-
+from datetime import datetime
+from typing import Dict, Any, Optional, List
 import aiohttp
-import requests
-from colorama import Fore
-
+from colorama import Fore, Style
 from config import config
 
 
 class ApiClient:
-    """Handles communication with external API endpoints"""
+    """Asynchronous HTTP client for sending events to external API"""
     
-    def __init__(self, endpoint: str = None, api_key: str = None, timeout: int = None):
-        """
-        Initialize API client
+    def __init__(self, endpoint: str, api_key: Optional[str] = None):
+        self.endpoint = endpoint.rstrip('/')
+        self.api_key = api_key
+        self.timeout = aiohttp.ClientTimeout(total=config.api_timeout)
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.event_buffer: List[Dict[str, Any]] = []
+        self.buffer_lock = asyncio.Lock()
+        self.max_buffer_size = config.api_batch_size
+        self.is_connected = False
         
-        Args:
-            endpoint: API endpoint URL (defaults to config)
-            api_key: API authentication key (defaults to config)  
-            timeout: Request timeout in seconds (defaults to config)
-        """
-        self.endpoint = endpoint or config.api_endpoint
-        self.api_key = api_key or config.api_key
-        self.timeout = timeout or config.api_timeout
-        self.batch_size = config.api_batch_size
-        
-        # Event batching
-        self.event_batch: List[Dict[str, Any]] = []
-        self.batch_lock = threading.Lock()
-        self.last_flush = time.time()
-        self.flush_interval = 10  # seconds
-        
-        # Statistics
-        self.events_sent = 0
-        self.events_failed = 0
-        self.last_error = None
-        
-        # Threading
-        self.executor = ThreadPoolExecutor(max_workers=2)
-        self.running = True
-        
-        # Start background flush timer
-        self._start_flush_timer()
-        
-        print(f"{Fore.CYAN}[API] Initialized - Endpoint: {self.endpoint}")
+        print(f"{Fore.GREEN}[API] Client initialized - Endpoint: {self.endpoint}")
     
-    def send_event_sync(self, event_type: str, event_data: Dict[str, Any], 
-                       metadata: Dict[str, Any] = None) -> bool:
-        """
-        Send event synchronously (blocking)
-        
-        Args:
-            event_type: Type of event (file_operation, process_creation, etc.)
-            event_data: Event data payload
-            metadata: Additional metadata
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        if not config.api_enabled:
-            return True  # Skip if API is disabled
-        
-        try:
-            # Prepare event payload
-            payload = self._prepare_event_payload(event_type, event_data, metadata)
-            
-            # Send immediately via requests (synchronous)
-            headers = self._get_headers()
-            
-            response = requests.post(
-                f"{self.endpoint}/events",
-                json=payload,
-                headers=headers,
-                timeout=self.timeout
-            )
-            
-            if response.status_code in [200, 201, 202]:
-                self.events_sent += 1
-                return True
-            else:
-                self.events_failed += 1
-                self.last_error = f"HTTP {response.status_code}: {response.text}"
-                print(f"{Fore.RED}[API] Failed to send event: {self.last_error}")
-                return False
-                
-        except Exception as e:
-            self.events_failed += 1
-            self.last_error = str(e)
-            print(f"{Fore.RED}[API] Exception sending event: {e}")
-            return False
+    async def __aenter__(self):
+        """Async context manager entry"""
+        await self.connect()
+        return self
     
-    def send_event_async(self, event_type: str, event_data: Dict[str, Any],
-                        metadata: Dict[str, Any] = None) -> None:
-        """
-        Send event asynchronously (non-blocking via thread pool)
-        
-        Args:
-            event_type: Type of event
-            event_data: Event data payload
-            metadata: Additional metadata
-        """
-        if not config.api_enabled:
-            return
-        
-        # Submit to thread pool for async execution
-        self.executor.submit(self.send_event_sync, event_type, event_data, metadata)
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit"""
+        await self.disconnect()
     
-    def add_to_batch(self, event_type: str, event_data: Dict[str, Any],
-                    metadata: Dict[str, Any] = None) -> None:
-        """
-        Add event to batch for bulk sending
-        
-        Args:
-            event_type: Type of event
-            event_data: Event data payload
-            metadata: Additional metadata
-        """
-        if not config.api_enabled:
-            return
-        
-        with self.batch_lock:
-            payload = self._prepare_event_payload(event_type, event_data, metadata)
-            self.event_batch.append(payload)
-            
-            # Flush if batch is full
-            if len(self.event_batch) >= self.batch_size:
-                self._flush_batch_async()
-    
-    def flush_batch(self) -> bool:
-        """
-        Flush current batch synchronously
-        
-        Returns:
-            True if successful, False otherwise
-        """
-        if not config.api_enabled:
-            return True
-        
-        with self.batch_lock:
-            if not self.event_batch:
-                return True
-            
-            batch_to_send = self.event_batch.copy()
-            self.event_batch.clear()
-        
-        try:
-            headers = self._get_headers()
-            
-            response = requests.post(
-                f"{self.endpoint}/events/batch",
-                json={"events": batch_to_send},
-                headers=headers,
-                timeout=self.timeout
-            )
-            
-            if response.status_code in [200, 201, 202]:
-                self.events_sent += len(batch_to_send)
-                print(f"{Fore.GREEN}[API] Sent batch of {len(batch_to_send)} events")
-                return True
-            else:
-                self.events_failed += len(batch_to_send)
-                self.last_error = f"HTTP {response.status_code}: {response.text}"
-                print(f"{Fore.RED}[API] Failed to send batch: {self.last_error}")
-                return False
-                
-        except Exception as e:
-            self.events_failed += len(batch_to_send)
-            self.last_error = str(e)
-            print(f"{Fore.RED}[API] Exception sending batch: {e}")
-            
-            # Put events back in batch for retry
-            with self.batch_lock:
-                self.event_batch = batch_to_send + self.event_batch
-            
-            return False
-    
-    def _flush_batch_async(self) -> None:
-        """Flush batch asynchronously via thread pool"""
-        self.executor.submit(self.flush_batch)
-    
-    def _prepare_event_payload(self, event_type: str, event_data: Dict[str, Any],
-                              metadata: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Prepare event payload for API"""
-        return {
-            "event_type": event_type,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "data": event_data,
-            "metadata": metadata or {},
-            "source": "os-pulse-controller",
-            "version": "1.0.0"
-        }
-    
-    def _get_headers(self) -> Dict[str, str]:
-        """Get HTTP headers for API requests"""
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "OS-Pulse-Controller/1.0.0"
-        }
-        
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-            # Alternative: headers["X-API-Key"] = self.api_key
-        
-        return headers
-    
-    def _start_flush_timer(self) -> None:
-        """Start background timer to flush batches periodically"""
-        def flush_timer():
-            while self.running:
-                time.sleep(self.flush_interval)
-                if time.time() - self.last_flush > self.flush_interval:
-                    if self.event_batch:
-                        self._flush_batch_async()
-                    self.last_flush = time.time()
-        
-        timer_thread = threading.Thread(target=flush_timer, daemon=True)
-        timer_thread.start()
-    
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get API client statistics"""
-        return {
-            "events_sent": self.events_sent,
-            "events_failed": self.events_failed,
-            "events_pending": len(self.event_batch),
-            "last_error": self.last_error,
-            "endpoint": self.endpoint,
-            "api_enabled": config.api_enabled
-        }
-    
-    def test_connection(self) -> bool:
-        """
-        Test API connection
-        
-        Returns:
-            True if connection successful, False otherwise
-        """
-        if not config.api_enabled:
-            print(f"{Fore.YELLOW}[API] API is disabled")
-            return False
-        
-        try:
-            headers = self._get_headers()
-            
-            # Send test event
-            test_payload = {
-                "event_type": "connection_test",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "data": {"test": True},
-                "source": "os-pulse-controller"
+    async def connect(self):
+        """Initialize HTTP session"""
+        if not self.session:
+            headers = {
+                'Content-Type': 'application/json',
+                'User-Agent': 'OS-Pulse-Controller/1.0'
             }
             
-            response = requests.post(
-                f"{self.endpoint}/test",
-                json=test_payload,
-                headers=headers,
-                timeout=5
+            if self.api_key:
+                headers['Authorization'] = f'Bearer {self.api_key}'
+                headers['X-API-Key'] = self.api_key
+            
+            self.session = aiohttp.ClientSession(
+                timeout=self.timeout,
+                headers=headers
             )
             
-            if response.status_code in [200, 201, 202, 404]:  # 404 might be OK if test endpoint doesn't exist
-                print(f"{Fore.GREEN}[API] Connection test successful")
-                return True
-            else:
-                print(f"{Fore.RED}[API] Connection test failed: HTTP {response.status_code}")
-                return False
-                
+            # Test connectivity
+            await self.test_connection()
+    
+    async def disconnect(self):
+        """Close HTTP session and flush remaining events"""
+        try:
+            # Flush any remaining events
+            await self.flush_events()
+            
+            if self.session:
+                await self.session.close()
+                self.session = None
+                print(f"{Fore.YELLOW}[API] Client disconnected")
         except Exception as e:
-            print(f"{Fore.RED}[API] Connection test failed: {e}")
+            print(f"{Fore.RED}[API] Error during disconnect: {e}")
+    
+    async def test_connection(self) -> bool:
+        """Test API connectivity"""
+        try:
+            if not self.session:
+                return False
+            
+            # Try a simple GET to test endpoint
+            test_url = f"{self.endpoint}/health" if not self.endpoint.endswith('/') else f"{self.endpoint}health"
+            
+            async with self.session.get(test_url) as response:
+                if response.status in [200, 404]:  # 404 is OK if health endpoint doesn't exist
+                    self.is_connected = True
+                    print(f"{Fore.GREEN}[API] Connection test successful")
+                    return True
+                else:
+                    print(f"{Fore.YELLOW}[API] Connection test returned status {response.status}")
+                    return False
+                    
+        except aiohttp.ClientConnectorError:
+            print(f"{Fore.YELLOW}[API] Connection test failed - endpoint may be unreachable")
+            return False
+        except Exception as e:
+            print(f"{Fore.YELLOW}[API] Connection test failed: {e}")
             return False
     
-    def shutdown(self) -> None:
-        """Shutdown API client and flush remaining events"""
-        print(f"{Fore.YELLOW}[API] Shutting down...")
-        self.running = False
+    async def send_event(self, event_type: str, event_data: Dict[str, Any]) -> bool:
+        """
+        Send a single event to the API
         
-        # Flush remaining events
-        if self.event_batch:
-            print(f"{Fore.CYAN}[API] Flushing {len(self.event_batch)} remaining events...")
-            self.flush_batch()
-        
-        # Shutdown thread pool
-        self.executor.shutdown(wait=True)
-        
-        # Print final statistics
-        stats = self.get_statistics()
-        print(f"{Fore.CYAN}[API] Final stats - Sent: {stats['events_sent']}, Failed: {stats['events_failed']}")
-
-
-# Global API client instance
-api_client = None
-
-def get_api_client() -> Optional[ApiClient]:
-    """Get or create global API client instance"""
-    global api_client
+        Args:
+            event_type: Type of event ('file_operation', 'process_creation', etc.)
+            event_data: Event data dictionary
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            if not self.session:
+                await self.connect()
+            
+            # Prepare event payload
+            payload = {
+                'event_type': event_type,
+                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'source': 'os-pulse-controller',
+                'data': event_data
+            }
+            
+            # Try to send immediately, or buffer if endpoint is down
+            return await self._send_payload(payload)
+            
+        except Exception as e:
+            print(f"{Fore.RED}[API] Failed to send event: {e}")
+            return False
     
-    if api_client is None and config.api_enabled:
-        api_client = ApiClient()
+    async def send_file_operation(self, operation: str, data: Dict[str, Any]) -> bool:
+        """Send file operation event"""
+        event_data = {
+            'operation': operation,
+            'file_path': data.get('filePath'),
+            'bytes_transferred': data.get('bytesTransferred', 0),
+            'content_preview': data.get('content', '')[:100] if data.get('content') else None,
+            'process_info': data.get('metadata', {}),
+            'timestamp': data.get('timestamp')
+        }
+        
+        return await self.send_event('file_operation', event_data)
     
-    return api_client
+    async def send_process_creation(self, operation: str, data: Dict[str, Any]) -> bool:
+        """Send process creation event"""
+        event_data = {
+            'operation': operation,
+            'image_path': data.get('imagePath'),
+            'command_line': data.get('commandLine'),
+            'current_directory': data.get('currentDirectory'),
+            'process_handle': data.get('processHandle'),
+            'thread_handle': data.get('threadHandle'),
+            'status': data.get('status', 0),
+            'process_info': data.get('metadata', {}),
+            'timestamp': data.get('timestamp')
+        }
+        
+        return await self.send_event('process_creation', event_data)
+    
+    async def _send_payload(self, payload: Dict[str, Any]) -> bool:
+        """Internal method to send payload with buffering fallback"""
+        try:
+            if not self.is_connected:
+                await self.test_connection()
+            
+            if self.is_connected and self.session:
+                async with self.session.post(
+                    f"{self.endpoint}/events",
+                    json=payload,
+                    timeout=self.timeout
+                ) as response:
+                    if response.status == 200:
+                        print(f"{Fore.GREEN}[API] Event sent successfully")
+                        return True
+                    elif response.status == 401:
+                        print(f"{Fore.RED}[API] Authentication failed (401)")
+                        return False
+                    elif response.status == 429:
+                        print(f"{Fore.YELLOW}[API] Rate limited (429) - buffering event")
+                        await self._buffer_event(payload)
+                        return False
+                    else:
+                        print(f"{Fore.YELLOW}[API] Unexpected status {response.status} - buffering event")
+                        await self._buffer_event(payload)
+                        return False
+            else:
+                # Buffer event if connection is down
+                await self._buffer_event(payload)
+                return False
+                
+        except aiohttp.ClientConnectorError:
+            print(f"{Fore.YELLOW}[API] Connection failed - buffering event")
+            await self._buffer_event(payload)
+            return False
+        except asyncio.TimeoutError:
+            print(f"{Fore.YELLOW}[API] Request timeout - buffering event")
+            await self._buffer_event(payload)
+            return False
+        except Exception as e:
+            print(f"{Fore.RED}[API] Send error: {e}")
+            return False
+    
+    async def _buffer_event(self, payload: Dict[str, Any]):
+        """Buffer event for later retry"""
+        async with self.buffer_lock:
+            self.event_buffer.append(payload)
+            
+            # Prevent buffer from growing too large
+            if len(self.event_buffer) > self.max_buffer_size * 2:
+                # Remove oldest events
+                self.event_buffer = self.event_buffer[-self.max_buffer_size:]
+                print(f"{Fore.YELLOW}[API] Buffer overflow - removed oldest events")
+    
+    async def flush_events(self) -> int:
+        """
+        Flush buffered events to API
+        
+        Returns:
+            Number of events successfully sent
+        """
+        if not self.event_buffer:
+            return 0
+        
+        async with self.buffer_lock:
+            events_to_send = self.event_buffer.copy()
+            self.event_buffer.clear()
+        
+        if not events_to_send:
+            return 0
+        
+        print(f"{Fore.CYAN}[API] Flushing {len(events_to_send)} buffered events...")
+        
+        sent_count = 0
+        failed_events = []
+        
+        for event in events_to_send:
+            try:
+                if await self._send_payload(event):
+                    sent_count += 1
+                else:
+                    failed_events.append(event)
+            except Exception as e:
+                print(f"{Fore.RED}[API] Error flushing event: {e}")
+                failed_events.append(event)
+        
+        # Re-buffer failed events
+        if failed_events:
+            async with self.buffer_lock:
+                self.event_buffer.extend(failed_events)
+            
+            print(f"{Fore.YELLOW}[API] Re-buffered {len(failed_events)} failed events")
+        
+        if sent_count > 0:
+            print(f"{Fore.GREEN}[API] Successfully sent {sent_count} events")
+        
+        return sent_count
+    
+    async def get_stats(self) -> Dict[str, Any]:
+        """Get API client statistics"""
+        return {
+            'endpoint': self.endpoint,
+            'connected': self.is_connected,
+            'buffered_events': len(self.event_buffer),
+            'max_buffer_size': self.max_buffer_size,
+            'timeout': self.timeout.total,
+            'has_auth': bool(self.api_key)
+        }
 
-def initialize_api_client(endpoint: str = None, api_key: str = None) -> ApiClient:
-    """Initialize API client with custom parameters"""
-    global api_client
-    api_client = ApiClient(endpoint, api_key)
-    return api_client
+
+class ApiClientManager:
+    """Manager for API client lifecycle"""
+    
+    def __init__(self):
+        self.client: Optional[ApiClient] = None
+        self._lock = asyncio.Lock()
+    
+    async def get_client(self) -> Optional[ApiClient]:
+        """Get or create API client"""
+        async with self._lock:
+            if not self.client and config.api_enabled:
+                if config.api_endpoint:
+                    try:
+                        self.client = ApiClient(config.api_endpoint, config.api_key)
+                        await self.client.connect()
+                        return self.client
+                    except Exception as e:
+                        print(f"{Fore.RED}[API] Failed to create client: {e}")
+                        return None
+            return self.client
+    
+    async def shutdown(self):
+        """Shutdown API client"""
+        async with self._lock:
+            if self.client:
+                await self.client.disconnect()
+                self.client = None
+
+
+# Global API client manager
+api_manager = ApiClientManager()
+
+
+async def get_api_client() -> Optional[ApiClient]:
+    """Get the global API client instance"""
+    return await api_manager.get_client()
+
+
+async def shutdown_api():
+    """Shutdown the global API client"""
+    await api_manager.shutdown()

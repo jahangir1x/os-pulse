@@ -237,8 +237,22 @@ class FridaController:
         except Exception as e:
             print(f"{Fore.RED}[ERROR] Error during cleanup: {e}")
         
-        # Shutdown message handler and API client
-        self.message_handler.shutdown()
+        # Shutdown message handler and API client (async)
+        import asyncio
+        try:
+            # Try to get existing event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is running, schedule the shutdown
+                asyncio.create_task(self.message_handler.shutdown())
+            else:
+                # If no loop is running, run the shutdown
+                loop.run_until_complete(self.message_handler.shutdown())
+        except RuntimeError:
+            # No event loop exists, create one
+            asyncio.run(self.message_handler.shutdown())
+        except Exception as e:
+            print(f"{Fore.RED}[ERROR] Error shutting down message handler: {e}")
         
         # Print statistics
         stats = self.message_handler.get_statistics()
