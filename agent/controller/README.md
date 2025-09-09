@@ -133,8 +133,93 @@ python main.py list-processes --filter "Visual Studio"
 When using `--interactive`, you can send commands to the agent:
 - `ping` - Test agent connectivity
 - `status` - Request agent status
+- `api-test` - Test API connection
+- `api-stats` - Show API statistics  
+- `api-flush` - Flush pending API events
 - `help` - Show available commands
 - `quit` - Exit interactive mode
+
+### API Integration Commands
+
+The controller supports forwarding events to external APIs for analysis:
+
+```bash
+# Test API connectivity
+> api-test
+
+# View API statistics  
+> api-stats
+
+# Force flush pending events
+> api-flush
+```
+
+## 🌐 API Integration
+
+OS-Pulse can forward monitoring events to external APIs for centralized analysis and storage.
+
+### Configuration
+
+Set these environment variables or create a `.env` file:
+
+```bash
+# Enable API forwarding
+OSPULSE_API_ENABLED=true
+
+# API endpoint for events
+OSPULSE_API_ENDPOINT=https://your-analysis-service.com/api/events
+
+# API authentication (optional)
+OSPULSE_API_KEY=your-api-key
+
+# Batch configuration
+OSPULSE_API_BATCH_SIZE=10
+OSPULSE_API_BATCH_TIMEOUT=5.0
+```
+
+### Event Format
+
+Events are sent as JSON with this structure:
+
+```json
+{
+  "event_type": "file_operation",
+  "event_data": {
+    "operation": "WriteFile",
+    "file_path": "C:\\Users\\user\\document.txt", 
+    "bytes_transferred": 256,
+    "content": "File content...",
+    "timestamp": "2024-01-15T12:00:00.000Z",
+    "process_info": {
+      "name": "notepad.exe",
+      "pid": 1234,
+      "session_id": "session-123"
+    }
+  },
+  "metadata": {
+    "operation": "WriteFile",
+    "source": "os-pulse-injector",
+    "handler": "file_operation",
+    "timestamp": "2024-01-15T12:00:00.000Z"
+  }
+}
+```
+
+### Testing API Integration
+
+Use the test script to validate API functionality:
+
+```bash
+# Run API integration tests
+python test_api.py
+```
+
+This tests:
+- API client initialization
+- Connection testing
+- Event batching
+- Batch flushing
+- Message handler integration
 
 ## 📊 Event Display
 

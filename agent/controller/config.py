@@ -20,9 +20,9 @@ class Config:
         self.colored_output = True
         self.max_content_display = 100  # Maximum characters to display for file content
         
-        # Future API settings (for external API integration)
-        self.api_enabled = False
-        self.api_endpoint = os.getenv('OSPULSE_API_ENDPOINT', 'http://localhost:8080/api/events')
+        # API settings (for external API integration)
+        self.api_enabled = os.getenv('OSPULSE_API_ENABLED', 'true').lower() == 'true'
+        self.api_endpoint = os.getenv('OSPULSE_API_ENDPOINT', 'http://localhost:8080/api')
         self.api_key = os.getenv('OSPULSE_API_KEY', '')
         self.api_timeout = int(os.getenv('OSPULSE_API_TIMEOUT', '30'))
         self.api_batch_size = int(os.getenv('OSPULSE_API_BATCH_SIZE', '10'))

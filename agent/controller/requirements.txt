@@ -3,3 +3,6 @@ frida-tools==14.4.5
 colorama==0.4.6
 click==8.1.7
 psutil==5.9.5
+aiohttp==3.9.5
+asyncio-timeout==4.0.3
+requests==2.32.3

@@ -237,17 +237,26 @@ class FridaController:
         except Exception as e:
             print(f"{Fore.RED}[ERROR] Error during cleanup: {e}")
         
+        # Shutdown message handler and API client
+        self.message_handler.shutdown()
+        
         # Print statistics
         stats = self.message_handler.get_statistics()
         print(f"\n{Fore.CYAN}[STATISTICS]")
         print(f"{Fore.CYAN}Events processed: {stats['event_count']}")
         if stats['session_info']:
             print(f"{Fore.CYAN}Session: {stats['session_info'].get('sessionId', 'Unknown')}")
+        
+        if stats.get('api_stats'):
+            api_stats = stats['api_stats']
+            print(f"{Fore.CYAN}API Events - Sent: {api_stats['events_sent']}, Failed: {api_stats['events_failed']}")
+            if api_stats['events_pending'] > 0:
+                print(f"{Fore.YELLOW}API Events - Pending: {api_stats['events_pending']}")
     
     def interactive_mode(self) -> None:
         """Start interactive mode for sending commands"""
         print(f"\n{Fore.GREEN}[INTERACTIVE] Interactive mode started")
-        print(f"{Fore.GREEN}Commands: ping, status, quit")
+        print(f"{Fore.GREEN}Commands: ping, status, api-test, api-stats, api-flush, quit")
         
         while self.running:
             try:
@@ -259,11 +268,20 @@ class FridaController:
                     self.send_ping()
                 elif cmd == 'status':
                     self.request_status()
+                elif cmd == 'api-test':
+                    self._test_api_connection()
+                elif cmd == 'api-stats':
+                    self._show_api_statistics()
+                elif cmd == 'api-flush':
+                    self._flush_api_events()
                 elif cmd == 'help':
                     print(f"{Fore.GREEN}Available commands:")
-                    print(f"{Fore.GREEN}  ping   - Send ping to agent")
-                    print(f"{Fore.GREEN}  status - Request status from agent")
-                    print(f"{Fore.GREEN}  quit   - Exit interactive mode")
+                    print(f"{Fore.GREEN}  ping      - Send ping to agent")
+                    print(f"{Fore.GREEN}  status    - Request status from agent")
+                    print(f"{Fore.GREEN}  api-test  - Test API connection")
+                    print(f"{Fore.GREEN}  api-stats - Show API statistics")
+                    print(f"{Fore.GREEN}  api-flush - Flush pending API events")
+                    print(f"{Fore.GREEN}  quit      - Exit interactive mode")
                 elif cmd:
                     print(f"{Fore.YELLOW}Unknown command: {cmd}. Type 'help' for available commands.")
                     
@@ -273,6 +291,39 @@ class FridaController:
                 break
         
         print(f"{Fore.YELLOW}[INTERACTIVE] Exiting interactive mode")
+    
+    def _test_api_connection(self) -> None:
+        """Test API connection"""
+        print(f"{Fore.CYAN}[INTERACTIVE] Testing API connection...")
+        if self.message_handler.test_api_connection():
+            print(f"{Fore.GREEN}[INTERACTIVE] API connection successful")
+        else:
+            print(f"{Fore.RED}[INTERACTIVE] API connection failed")
+    
+    def _show_api_statistics(self) -> None:
+        """Show API statistics"""
+        stats = self.message_handler.get_statistics()
+        print(f"\n{Fore.CYAN}[API STATISTICS]")
+        print(f"{Fore.CYAN}API Enabled: {stats.get('api_enabled', False)}")
+        
+        if stats.get('api_stats'):
+            api_stats = stats['api_stats']
+            print(f"{Fore.CYAN}Events Sent: {api_stats['events_sent']}")
+            print(f"{Fore.CYAN}Events Failed: {api_stats['events_failed']}")
+            print(f"{Fore.CYAN}Events Pending: {api_stats['events_pending']}")
+            print(f"{Fore.CYAN}Endpoint: {api_stats['endpoint']}")
+            if api_stats['last_error']:
+                print(f"{Fore.RED}Last Error: {api_stats['last_error']}")
+        else:
+            print(f"{Fore.YELLOW}No API statistics available")
+    
+    def _flush_api_events(self) -> None:
+        """Flush pending API events"""
+        print(f"{Fore.CYAN}[INTERACTIVE] Flushing API events...")
+        if self.message_handler.flush_api_events():
+            print(f"{Fore.GREEN}[INTERACTIVE] API events flushed successfully")
+        else:
+            print(f"{Fore.RED}[INTERACTIVE] Failed to flush API events")
 
 
 def signal_handler(signum, frame):
