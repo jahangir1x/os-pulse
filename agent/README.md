@@ -1,152 +1,212 @@
-# OS-Pulse Agent
+# OS-Pulse
 
-A Windows system monitoring agent built with Frida for real-time file I/O and process creation tracking.
+A sophisticated Windows system monitoring framework built with **Frida** and **Python**. OS-Pulse provides real-time monitoring of file operations and process creation activities through dynamic instrumentation.
 
-## 🎯 Purpose
+## 🎯 Overview
 
-Monitor Windows system activities in real-time:
-- **File Operations**: Track ReadFile/WriteFile API calls with content extraction
-- **Process Creation**: Monitor NtCreateUserProcess and related APIs
-- **Extensible Architecture**: Easy to add new monitoring capabilities
+OS-Pulse consists of two main components:
+- **Injector**: TypeScript-based Frida agent for Windows API hooking
+- **Controller**: Python-based process manager and event processor
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Controller    │    │    Injector     │    │ Target Process  │
+│   (Python)      │    │ (TypeScript/JS) │    │   (notepad.exe) │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ • Process Spawn │    │ • File Hooks    │    │ • ReadFile()    │
+│ • Process Attach│◄──►│ • Process Hooks │    │ • WriteFile()   │
+│ • Event Display │    │ • Event Sender  │    │ • NtCreateProc()│
+│ • API Gateway   │    │ • Frida send()  │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js and npm
-- Python 3.8+ for Frida
-- Windows target application
+- **Windows** (7, 10, 11)
+- **Python 3.8+**
+- **Node.js 16+**
+- **Administrator privileges** (for some processes)
 
-### Installation & Usage
+### Setup
 
-#### 1. Setup Python Environment
-```powershell
-# Create virtual environment
-python -m venv .pyenv
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/jahangir1x/os-pulse.git
+   cd os-pulse/agent
+   ```
 
-# Activate environment (PowerShell)
-& .\.pyenv\Scripts\Activate.ps1
+2. **Setup the injector:**
+   ```bash
+   cd injector
+   npm install
+   npm run build
+   cd ..
+   ```
 
-# Install Python dependencies
-pip install -r requirements.txt
-```
+3. **Setup the controller:**
+   ```bash
+   cd controller
+   setup.bat
+   ```
 
-#### 2. Setup Node.js Dependencies
-```powershell
-# Install Node.js dependencies
-npm install
+### Usage
 
-# Build the agent
-npm run build
-```
+1. **Spawn a new process with monitoring:**
+   ```bash
+   cd controller
+   python main.py spawn --executable "C:\Windows\System32\notepad.exe"
+   ```
 
-#### 3. Run the Agent
-```powershell
-# Run with PowerShell script (recommended)
-.\run-frida.ps1
+2. **Attach to existing process:**
+   ```bash
+   python main.py attach --process-name "notepad.exe"
+   ```
 
-# Or run manually
-frida -n notepad.exe -l .\_agent.js --no-pause
-```
-
-### Development Workflow
-
-```powershell
-# Watch mode for continuous compilation
-npm run watch
-
-# Run with custom target
-.\run-frida.ps1 -Target "calc.exe"
-
-# Spawn new process instead of attaching
-.\run-frida.ps1 -Target "notepad.exe" -Spawn
-```
-
-## ⚙️ Configuration
-
-Customize monitoring behavior in `src/index.ts`:
-
-```typescript
-const config: Partial<HookConfiguration> = {
-    enableFileOperations: true,     // Monitor file I/O
-    enableProcessCreation: true,    // Monitor process creation
-    maxContentLength: 512,          // Max content to log
-    logBinaryData: false           // Log binary data as hex
-};
-```
+3. **Quick launchers:**
+   ```bash
+   # Spawn notepad
+   spawn-notepad.bat
+   
+   # Attach to notepad
+   attach-notepad.bat
+   ```
 
 ## 📁 Project Structure
 
 ```
-src/
-├── core/system-monitor.ts       # Main orchestrator
-├── monitors/
-│   ├── file-operations.ts       # ReadFile/WriteFile monitoring
-│   └── process-creation.ts      # Process creation monitoring
-├── logging/console-logger.ts    # Structured logging
-├── utils/windows-api.ts         # Windows API utilities
-├── types/index.ts              # Type definitions
-└── index.ts                    # Entry point
+agent/
+├── injector/              # Frida TypeScript agent
+│   ├── src/              # TypeScript source code
+│   │   ├── monitors/     # API hook implementations
+│   │   ├── messaging/    # Event communication
+│   │   ├── logging/      # Console logging
+│   │   └── utils/        # Windows API utilities
+│   ├── _agent.js         # Compiled Frida script
+│   └── package.json      # Node.js dependencies
+├── controller/           # Python process controller
+│   ├── main.py          # CLI entry point
+│   ├── frida_controller.py # Frida management
+│   ├── message_handler.py  # Event processing
+│   └── requirements.txt    # Python dependencies
+└── .github/
+    └── copilot-instructions.md # AI assistant context
 ```
 
-## 🔧 Features
+## 🔍 Monitoring Capabilities
 
-### File Operations Monitoring
-- **ReadFile/WriteFile** API interception
-- **Content extraction** with configurable limits
-- **Binary data** handling (hex output optional)
-- **File path resolution** from handles
+### File Operations
+- **ReadFile/WriteFile**: Captures file I/O with content extraction
+- **Path Resolution**: Converts handles to file paths
+- **Content Filtering**: Configurable content length and binary data handling
 
-### Process Creation Monitoring
-- **NtCreateUserProcess** tracking
-- **NtCreateProcess/NtCreateProcessEx** support
-- **Command line extraction** from process parameters
-- **Process metadata** logging
+### Process Creation
+- **NtCreateUserProcess**: Modern Windows process creation
+- **NtCreateProcess/Ex**: Legacy process creation APIs
+- **Parameter Extraction**: Command lines, image paths, working directories
 
-### Clean Architecture
-- **TypeScript** with full type safety
-- **Modular design** following SOLID principles
-- **Error handling** with graceful fallbacks
-- **VS Code integration** with debug configurations
+### Event Output
+```
+[FILE OPERATION #1] WriteFile
+Path: C:\Users\user\document.txt
+Bytes: 256
+Content: "Hello, World!..."
+Time: 2025-09-09T12:00:01.000Z
+Process: notepad.exe (PID: 1234)
 
-## 🛠️ Development
+[PROCESS CREATION #1] NtCreateUserProcess
+Status: SUCCESS (0x00000000)
+Image: C:\Windows\System32\calc.exe
+Command: calc.exe
+Process Handle: 0x12345678
+Source Process: notepad.exe (PID: 1234)
+```
 
-### Adding New Monitors
-1. Create monitor in `src/monitors/`
-2. Export from `src/monitors/index.ts`
-3. Add to `SystemMonitor` in `src/core/`
+## ⚙️ Configuration
 
-### Custom Configuration
+### Injector Configuration
+Configure monitoring behavior in `injector/src/index.ts`:
 ```typescript
-interface HookConfiguration {
-    enableFileOperations: boolean;
-    enableProcessCreation: boolean;
-    maxContentLength: number;
-    logBinaryData: boolean;
-}
+const config: Partial<HookConfiguration> = {
+    enableFileOperations: true,
+    enableProcessCreation: true,
+    maxContentLength: 512,
+    logBinaryData: false
+};
 ```
 
-### VS Code Debug
-Use the included debug configurations for easy development and testing.
-
-## 📊 Example Output
-
-```
-[FILE-READ] notepad.exe | C:\Users\user\document.txt | Content: Hello World...
-[PROCESS-CREATE] explorer.exe | Command: "C:\Windows\System32\calc.exe"
-[FILE-WRITE] calc.exe | C:\Users\user\AppData\Local\temp.dat | Size: 1024 bytes
+### Controller Configuration
+Environment variables for controller behavior:
+```bash
+set OSPULSE_LOG_LEVEL=DEBUG
+set OSPULSE_API_ENDPOINT=http://localhost:8080/api/events
 ```
 
-## 🔄 Migration & Compatibility
+## 🧪 Testing
 
-This project evolved from a simple Frida script to a comprehensive monitoring platform:
-- **Enterprise-ready** codebase
-- **Maintainable** modular architecture  
-- **Extensible** for additional monitoring needs
+### Test the injector:
+```bash
+cd injector
+npm run build
+npm test  # If test scripts are available
+```
 
-## 📝 Author
+### Test the controller:
+```bash
+cd controller
+python test_controller.py
+```
 
-**jahangir1x** - Windows system monitoring with Frida
+## 🔧 Development
 
----
+### Building the injector:
+```bash
+cd injector
+npm run build    # One-time build
+npm run watch    # Watch mode for development
+```
 
-Built with ❤️ for the OS-Pulse monitoring platform
+### Running with custom targets:
+```bash
+# Controller examples
+python main.py spawn --executable "C:\Windows\System32\cmd.exe"
+python main.py attach --pid 1234
+python main.py list-processes --filter explorer
+```
+
+## 🛡️ Security Considerations
+
+- **Elevated Privileges**: Some system processes require Administrator rights
+- **Data Sensitivity**: File content monitoring may capture sensitive information
+- **Performance Impact**: API hooking introduces minimal overhead
+- **Target Process**: Injection affects target process behavior
+
+## 🔮 Future Enhancements
+
+- **Web Dashboard**: Real-time event visualization
+- **REST API**: External system integration
+- **Database Storage**: Historical event analysis
+- **Alert System**: Suspicious activity detection
+- **Network Monitoring**: WinSock API hooks
+- **Registry Monitoring**: Registry operation tracking
+
+## 📝 License
+
+This project is for educational and research purposes. Use responsibly and in accordance with applicable laws and regulations.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📞 Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check the documentation in each component folder
+- Review the troubleshooting guides in USAGE.md files

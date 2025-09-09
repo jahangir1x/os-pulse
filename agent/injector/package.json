@@ -1,0 +1,61 @@
+{
+  "name": "os-pulse-injector",
+  "version": "1.0.0",
+  "description": "OS-Pulse Injector - Frida TypeScript agent for Windows system monitoring",
+  "private": true,
+  "main": "src/index.ts",
+  "author": "jahangir1x",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jahangir1x/os-pulse.git",
+    "directory": "agent/injector"
+  },
+  "keywords": [
+    "frida",
+    "windows",
+    "monitoring",
+    "instrumentation",
+    "typescript",
+    "file-operations",
+    "process-creation",
+    "api-hooking",
+    "system-monitor"
+  ],
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "frida-compile src/index.ts -o _agent.js -c",
+    "watch": "frida-compile src/index.ts -o _agent.js -w",
+    "clean": "del _agent.js 2>nul || rm -f _agent.js",
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'Linting not configured yet'",
+    "test": "echo 'Tests not configured yet'"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "devDependencies": {
+    "@types/frida-gum": "^19.0.0",
+    "@types/node": "^18.19.111",
+    "frida-compile": "^19.0.4",
+    "frida-java-bridge": "^7.0.1",
+    "typescript": "^4.9.5"
+  },
+  "frida": {
+    "target": "_agent.js",
+    "source": "src/index.ts",
+    "features": [
+      "file-operations",
+      "process-creation",
+      "messaging",
+      "console-logging"
+    ]
+  },
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "ia32"
+  ]
+}
