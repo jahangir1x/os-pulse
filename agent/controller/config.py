@@ -5,6 +5,19 @@ import os
 from typing import Dict, Any
 from pathlib import Path
 
+# Try to load .env file if python-dotenv is available
+try:
+    from dotenv import load_dotenv
+    # Load .env file from the agent directory (parent of controller)
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"[CONFIG] Loaded environment variables from {env_path}")
+    else:
+        print(f"[CONFIG] No .env file found at {env_path}")
+except ImportError:
+    print("[CONFIG] python-dotenv not installed, using system environment variables only")
+
 
 class Config:
     """Configuration management for the controller"""
@@ -25,7 +38,10 @@ class Config:
         self.api_endpoint = os.getenv('OSPULSE_API_ENDPOINT', 'http://localhost:8080/api')
         self.api_key = os.getenv('OSPULSE_API_KEY', '')
         self.api_timeout = int(os.getenv('OSPULSE_API_TIMEOUT', '30'))
+        self.api_retry_count = int(os.getenv('OSPULSE_API_RETRY_COUNT', '3'))
+        self.api_retry_delay = int(os.getenv('OSPULSE_API_RETRY_DELAY', '1'))
         self.api_batch_size = int(os.getenv('OSPULSE_API_BATCH_SIZE', '10'))
+        self.api_batch_timeout = int(os.getenv('OSPULSE_API_BATCH_TIMEOUT', '5'))
         
         # Logging settings
         self.log_level = os.getenv('OSPULSE_LOG_LEVEL', 'INFO')

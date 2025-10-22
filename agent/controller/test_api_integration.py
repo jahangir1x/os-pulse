@@ -10,14 +10,14 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from api_client import ApiClient
 from message_handler import MessageHandler
-import config
+from config import config
 
 async def test_api_client():
     """Test basic API client functionality"""
     print("Testing API Client...")
     
-    # Test with mock endpoint
-    client = ApiClient("http://httpbin.org/post", "test-key")
+    # Test with dummy endpoint (we expect this to fail gracefully)
+    client = ApiClient("http://localhost:9999", "test-key")
     
     # Test event sending
     test_event = {
@@ -37,27 +37,36 @@ async def test_api_client():
     
     try:
         # Test basic event sending
-        success = await client.send_event(test_event)
+        success = await client.send_event('file_operation', test_event)
         print(f"✓ Basic event sending: {'SUCCESS' if success else 'FAILED'}")
         
         # Test file operation sending
         success = await client.send_file_operation(
             operation='ReadFile',
-            file_path='C:\\test\\read.txt',
-            content='Read content',
-            bytes_transferred=12,
-            process_name='reader.exe',
-            process_id=5678
+            data={
+                'filePath': 'C:\\test\\read.txt',
+                'content': 'Read content',
+                'bytesTransferred': 12,
+                'metadata': {
+                    'processName': 'reader.exe',
+                    'processId': 5678
+                }
+            }
         )
         print(f"✓ File operation sending: {'SUCCESS' if success else 'FAILED'}")
         
         # Test process creation sending
         success = await client.send_process_creation(
             operation='NtCreateUserProcess',
-            command_line='notepad.exe test.txt',
-            process_name='notepad.exe',
-            process_id=9999,
-            parent_process_id=1111
+            data={
+                'commandLine': 'notepad.exe test.txt',
+                'imagePath': 'C:\\Windows\\System32\\notepad.exe',
+                'processId': 9999,
+                'metadata': {
+                    'processName': 'explorer.exe',
+                    'processId': 1111
+                }
+            }
         )
         print(f"✓ Process creation sending: {'SUCCESS' if success else 'FAILED'}")
         

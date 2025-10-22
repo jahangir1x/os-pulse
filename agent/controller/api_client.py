@@ -18,10 +18,11 @@ class ApiClient:
         self.api_key = api_key
         self.timeout = aiohttp.ClientTimeout(total=config.api_timeout)
         self.session: Optional[aiohttp.ClientSession] = None
-        self.event_buffer: List[Dict[str, Any]] = []
-        self.buffer_lock = asyncio.Lock()
-        self.max_buffer_size = config.api_batch_size
         self.is_connected = False
+        
+        # Statistics tracking
+        self.events_sent = 0
+        self.events_failed = 0
         
         print(f"{Fore.GREEN}[API] Client initialized - Endpoint: {self.endpoint}")
     
@@ -115,7 +116,7 @@ class ApiClient:
                 'data': event_data
             }
             
-            # Try to send immediately, or buffer if endpoint is down
+            # Send immediately - no buffering or queuing
             return await self._send_payload(payload)
             
         except Exception as e:
@@ -152,8 +153,11 @@ class ApiClient:
         return await self.send_event('process_creation', event_data)
     
     async def _send_payload(self, payload: Dict[str, Any]) -> bool:
-        """Internal method to send payload with buffering fallback"""
+        """Internal method to send payload immediately"""
         try:
+            if not self.session:
+                await self.connect()
+                
             if not self.is_connected:
                 await self.test_connection()
             
@@ -164,100 +168,58 @@ class ApiClient:
                     timeout=self.timeout
                 ) as response:
                     if response.status == 200:
+                        self.events_sent += 1
                         print(f"{Fore.GREEN}[API] Event sent successfully")
                         return True
                     elif response.status == 401:
+                        self.events_failed += 1
                         print(f"{Fore.RED}[API] Authentication failed (401)")
                         return False
                     elif response.status == 429:
-                        print(f"{Fore.YELLOW}[API] Rate limited (429) - buffering event")
-                        await self._buffer_event(payload)
+                        self.events_failed += 1
+                        print(f"{Fore.YELLOW}[API] Rate limited (429) - dropping event")
                         return False
                     else:
-                        print(f"{Fore.YELLOW}[API] Unexpected status {response.status} - buffering event")
-                        await self._buffer_event(payload)
+                        self.events_failed += 1
+                        print(f"{Fore.YELLOW}[API] Unexpected status {response.status} - dropping event")
                         return False
             else:
-                # Buffer event if connection is down
-                await self._buffer_event(payload)
+                # Drop event if connection is down
+                self.events_failed += 1
+                print(f"{Fore.YELLOW}[API] Connection down - dropping event")
                 return False
                 
         except aiohttp.ClientConnectorError:
-            print(f"{Fore.YELLOW}[API] Connection failed - buffering event")
-            await self._buffer_event(payload)
+            self.events_failed += 1
+            print(f"{Fore.YELLOW}[API] Connection failed - dropping event")
             return False
         except asyncio.TimeoutError:
-            print(f"{Fore.YELLOW}[API] Request timeout - buffering event")
-            await self._buffer_event(payload)
+            self.events_failed += 1
+            print(f"{Fore.YELLOW}[API] Request timeout - dropping event")
             return False
         except Exception as e:
+            self.events_failed += 1
             print(f"{Fore.RED}[API] Send error: {e}")
             return False
     
-    async def _buffer_event(self, payload: Dict[str, Any]):
-        """Buffer event for later retry"""
-        async with self.buffer_lock:
-            self.event_buffer.append(payload)
-            
-            # Prevent buffer from growing too large
-            if len(self.event_buffer) > self.max_buffer_size * 2:
-                # Remove oldest events
-                self.event_buffer = self.event_buffer[-self.max_buffer_size:]
-                print(f"{Fore.YELLOW}[API] Buffer overflow - removed oldest events")
-    
     async def flush_events(self) -> int:
         """
-        Flush buffered events to API
+        No-op method for compatibility - no buffering used
         
         Returns:
-            Number of events successfully sent
+            Always returns 0 since no events are buffered
         """
-        if not self.event_buffer:
-            return 0
-        
-        async with self.buffer_lock:
-            events_to_send = self.event_buffer.copy()
-            self.event_buffer.clear()
-        
-        if not events_to_send:
-            return 0
-        
-        print(f"{Fore.CYAN}[API] Flushing {len(events_to_send)} buffered events...")
-        
-        sent_count = 0
-        failed_events = []
-        
-        for event in events_to_send:
-            try:
-                if await self._send_payload(event):
-                    sent_count += 1
-                else:
-                    failed_events.append(event)
-            except Exception as e:
-                print(f"{Fore.RED}[API] Error flushing event: {e}")
-                failed_events.append(event)
-        
-        # Re-buffer failed events
-        if failed_events:
-            async with self.buffer_lock:
-                self.event_buffer.extend(failed_events)
-            
-            print(f"{Fore.YELLOW}[API] Re-buffered {len(failed_events)} failed events")
-        
-        if sent_count > 0:
-            print(f"{Fore.GREEN}[API] Successfully sent {sent_count} events")
-        
-        return sent_count
+        return 0
     
     async def get_stats(self) -> Dict[str, Any]:
         """Get API client statistics"""
         return {
             'endpoint': self.endpoint,
             'connected': self.is_connected,
-            'buffered_events': len(self.event_buffer),
-            'max_buffer_size': self.max_buffer_size,
             'timeout': self.timeout.total,
-            'has_auth': bool(self.api_key)
+            'has_auth': bool(self.api_key),
+            'events_sent': self.events_sent,
+            'events_failed': self.events_failed
         }
 
 
