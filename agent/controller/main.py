@@ -51,11 +51,7 @@ def spawn_command(args):
     
     if controller.spawn_process(args.executable, args.args):
         print(f"{Fore.GREEN}Successfully spawned and attached to process")
-        
-        if args.interactive:
-            controller.interactive_mode()
-        else:
-            controller.start_monitoring()
+        controller.start_monitoring()
     else:
         print(f"{Fore.RED}Failed to spawn process")
         sys.exit(1)
@@ -75,11 +71,7 @@ def attach_command(args):
     
     if success:
         print(f"{Fore.GREEN}Successfully attached to process")
-        
-        if args.interactive:
-            controller.interactive_mode()
-        else:
-            controller.start_monitoring()
+        controller.start_monitoring()
     else:
         print(f"{Fore.RED}Failed to attach to process")
         sys.exit(1)
@@ -93,7 +85,6 @@ def main():
         epilog="""
 Examples:
   python main.py spawn --executable "C:\\Windows\\System32\\notepad.exe"
-  python main.py spawn --executable "C:\\Windows\\System32\\notepad.exe" --interactive
   python main.py attach --process-name "notepad.exe"
   python main.py attach --pid 1234
   python main.py list-processes
@@ -113,7 +104,6 @@ Examples:
     spawn_parser = subparsers.add_parser('spawn', help='Spawn a new process with monitoring')
     spawn_parser.add_argument('--executable', required=True, help='Path to executable to spawn')
     spawn_parser.add_argument('--args', nargs='*', help='Arguments to pass to the executable')
-    spawn_parser.add_argument('--interactive', action='store_true', help='Start in interactive mode')
     spawn_parser.set_defaults(func=spawn_command)
     
     # Attach command
@@ -121,7 +111,6 @@ Examples:
     attach_group = attach_parser.add_mutually_exclusive_group(required=True)
     attach_group.add_argument('--process-name', help='Name of process to attach to')
     attach_group.add_argument('--pid', type=int, help='PID of process to attach to')
-    attach_parser.add_argument('--interactive', action='store_true', help='Start in interactive mode')
     attach_parser.set_defaults(func=attach_command)
     
     # List processes command

@@ -26,9 +26,6 @@
 4. **Spawn a new process with monitoring:**
    ```bash
    python main.py spawn --executable "C:\Windows\System32\notepad.exe"
-   
-   # With interactive mode
-   python main.py spawn --executable "C:\Windows\System32\notepad.exe" --interactive
    ```
 
 5. **Attach to existing process:**
@@ -41,14 +38,6 @@
 
 - `spawn-notepad.bat` - Quickly spawn notepad with monitoring
 - `attach-notepad.bat` - Quickly attach to existing notepad process
-
-## Interactive Mode Commands
-
-When in interactive mode, you can use these commands:
-- `ping` - Send ping to the agent
-- `status` - Request status from the agent  
-- `help` - Show available commands
-- `quit` - Exit interactive mode
 
 ## Expected Output
 

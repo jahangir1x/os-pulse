@@ -15,7 +15,6 @@ The controller serves as the orchestration layer that manages Frida injection, p
 ### 📊 **Event Processing**
 - **Real-Time Display**: Color-coded console output with timestamps
 - **Event Statistics**: Track file operations and process creations
-- **Interactive Mode**: Send commands to injected agents
 - **Structured Logging**: Configurable log levels and formatting
 
 ### 🌐 **API Integration** ✨ *SIMPLIFIED*
@@ -172,7 +171,6 @@ controller.stop()
 - **Color-Coded Display**: Rich console output with timestamps
 - **API Integration**: Forward events to external APIs asynchronously
 - **Statistics Tracking**: Monitor event counts and performance metrics
-- **Interactive Commands**: Send ping/status commands to agents
 
 **Event Types Handled:**
 ```python
@@ -401,20 +399,6 @@ python main.py list-processes --filter notepad
 python main.py list-processes --filter chrome --detailed
 ```
 
-### Interactive Commands
-
-```powershell
-# While monitoring is active, use these commands:
-ping        # Test agent connectivity
-status      # Get agent status
-config      # Show current configuration
-stats       # Display statistics
-api-status  # Check API connection health
-flush       # Flush pending API events
-help        # Show available commands
-quit        # Stop monitoring and exit
-```
-
 ### Debug Mode
 
 ```powershell
@@ -597,14 +581,12 @@ python main.py <command> [options]
 ```bash
 python main.py spawn --executable "C:\Windows\System32\notepad.exe"
 python main.py spawn --executable "C:\Windows\System32\cmd.exe" --args "/c" "dir"
-python main.py spawn --executable "notepad.exe" --interactive
 ```
 
 #### Attach to Process
 ```bash
 python main.py attach --process-name "notepad.exe"
 python main.py attach --pid 1234
-python main.py attach --process-name "notepad.exe" --interactive
 ```
 
 #### List Processes
@@ -613,17 +595,6 @@ python main.py list-processes
 python main.py list-processes --filter explorer
 python main.py list-processes --filter "Visual Studio"
 ```
-
-### Interactive Mode
-
-When using `--interactive`, you can send commands to the agent:
-- `ping` - Test agent connectivity
-- `status` - Request agent status
-- `api-test` - Test API connection
-- `api-stats` - Show API statistics  
-- `api-flush` - Flush pending API events
-- `help` - Show available commands
-- `quit` - Exit interactive mode
 
 ### API Integration Commands
 

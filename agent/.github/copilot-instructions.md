@@ -831,7 +831,6 @@ python main.py spawn --executable "C:\Windows\System32\notepad.exe"
 2. Run controller test suite
 3. Spawn notepad and perform file operations
 4. Verify events appear in controller console
-5. Test interactive mode with ping/status commands
 
 ## Performance Considerations
 
