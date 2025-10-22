@@ -237,11 +237,9 @@ class FridaController:
         except Exception as e:
             print(f"{Fore.RED}[ERROR] Error during cleanup: {e}")
         
-        # Shutdown message handler (simple, non-async approach)
+        # Shutdown message handler
         try:
-            # For now, just skip async shutdown to avoid event loop issues
-            # The API client will be cleaned up when the process exits
-            pass
+            self.message_handler.shutdown()
         except Exception as e:
             print(f"{Fore.RED}[ERROR] Error shutting down message handler: {e}")
         

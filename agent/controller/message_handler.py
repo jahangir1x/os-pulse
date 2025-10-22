@@ -1,9 +1,9 @@
 """
 Message handlers for processing events from the Frida injector
 """
-import asyncio
 import json
 import threading
+import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
 from colorama import Fore, Style, init
@@ -21,35 +21,35 @@ class MessageHandler:
         self.session_info = {}
         self.event_count = 0
         self.api_enabled = enable_api if enable_api is not None else config.api_enabled
-        self.api_client = None  # Will be initialized on first use
-        self._api_init_attempted = False
+        self.api_endpoint = config.api_endpoint
+        self.api_key = config.api_key
+        self.session = requests.Session() if self.api_enabled else None
         
         if self.api_enabled:
             print(f"{Fore.CYAN}[HANDLER] API integration enabled - Endpoint: {config.api_endpoint}")
+            # Set up session headers
+            if self.session:
+                self.session.headers.update({
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'OS-Pulse-Controller/1.0'
+                })
+                if self.api_key:
+                    self.session.headers.update({
+                        'Authorization': f'Bearer {self.api_key}',
+                        'X-API-Key': self.api_key
+                    })
         else:
             print(f"{Fore.YELLOW}[HANDLER] API integration disabled")
     
-    async def _init_api_client(self):
-        """Initialize API client asynchronously"""
-        try:
-            from api_client import get_api_client
-            self.api_client = await get_api_client()
-            if self.api_client:
-                print(f"{Fore.GREEN}[HANDLER] API client initialized successfully")
-            else:
-                print(f"{Fore.YELLOW}[HANDLER] API client initialization failed")
-        except Exception as e:
-            print(f"{Fore.RED}[HANDLER] Error initializing API client: {e}")
-    
     def _send_to_api(self, event_type: str, data: Dict[str, Any]):
-        """Send event to API immediately (simple approach)"""
-        if not self.api_enabled:
+        """Send event to API immediately using requests (simple approach)"""
+        if not self.api_enabled or not self.session:
             return
             
         # Fire and forget - run in background thread
         def send_in_thread():
             try:
-                asyncio.run(self._send_api_event(event_type, data))
+                self._send_api_event(event_type, data)
             except Exception as e:
                 print(f"{Fore.YELLOW}[API] Send failed: {e}")
         
@@ -57,31 +57,37 @@ class MessageHandler:
         thread = threading.Thread(target=send_in_thread, daemon=True)
         thread.start()
     
-    async def _send_api_event(self, event_type: str, data: Dict[str, Any]):
-        """Send single event to API immediately"""
+    def _send_api_event(self, event_type: str, data: Dict[str, Any]):
+        """Send single event to API immediately using requests"""
         try:
-            # Initialize API client if needed
-            if self.api_client is None and not self._api_init_attempted:
-                self._api_init_attempted = True
-                await self._init_api_client()
+            # Prepare event payload
+            payload = {
+                'event_type': event_type,
+                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'source': 'os-pulse-controller',
+                'data': data
+            }
             
-            if self.api_client:
-                if event_type == 'session_start':
-                    await self.api_client.send_event(event_type, data)
-                elif event_type == 'file_operation':
-                    await self.api_client.send_file_operation(
-                        data.get('operation', 'unknown'),
-                        data
-                    )
-                elif event_type == 'process_creation':
-                    await self.api_client.send_process_creation(
-                        data.get('operation', 'unknown'),
-                        data
-                    )
-                else:
-                    await self.api_client.send_event(event_type, data)
-                    
-                print(f"{Fore.GREEN}[API] Sent {event_type} event")
+            # Send POST request
+            response = self.session.post(
+                f"{self.api_endpoint}/events",
+                json=payload,
+                timeout=config.api_timeout
+            )
+            
+            if response.status_code == 200:
+                print(f"{Fore.GREEN}[API] Sent {event_type} event successfully")
+            elif response.status_code == 401:
+                print(f"{Fore.RED}[API] Authentication failed (401)")
+            elif response.status_code == 429:
+                print(f"{Fore.YELLOW}[API] Rate limited (429) - dropping event")
+            else:
+                print(f"{Fore.YELLOW}[API] Unexpected status {response.status_code} - dropping event")
+                
+        except requests.exceptions.ConnectionError:
+            print(f"{Fore.YELLOW}[API] Connection failed - dropping {event_type} event")
+        except requests.exceptions.Timeout:
+            print(f"{Fore.YELLOW}[API] Request timeout - dropping {event_type} event")
         except Exception as e:
             print(f"{Fore.YELLOW}[API] Failed to send {event_type}: {e}")
         
@@ -235,39 +241,15 @@ class MessageHandler:
         
         return stats
     
-    async def enable_api(self, endpoint: str = None, api_key: str = None) -> None:
-        """Enable API integration"""
-        self.api_enabled = True
-        await self._init_api_client()
-        print(f"{Fore.GREEN}[HANDLER] API integration enabled")
-    
-    async def disable_api(self) -> None:
-        """Disable API integration"""
-        if self.api_client:
-            await self.api_client.disconnect()
-        
-        self.api_enabled = False
-        self.api_client = None
-        print(f"{Fore.YELLOW}[HANDLER] API integration disabled")
-    
-    async def shutdown(self) -> None:
-        """Shutdown message handler and API client"""
+    def shutdown(self) -> None:
+        """Shutdown message handler and close session"""
         print(f"{Fore.CYAN}[HANDLER] Shutting down...")
         
-        # Shutdown API client
-        if self.api_client:
-            print(f"{Fore.CYAN}[HANDLER] Shutting down API client...")
-            await self.api_client.disconnect()
+        # Close HTTP session
+        if self.session:
+            self.session.close()
+            self.session = None
     
-    async def flush_api_events(self) -> int:
+    def flush_api_events(self) -> int:
         """No buffering - events are sent immediately"""
         return 0  # No events to flush since we send immediately
-    
-    async def test_api_connection(self) -> bool:
-        """Test API connection"""
-        if self.api_client:
-            try:
-                return await self.api_client.test_connection()
-            except Exception:
-                return False
-        return False

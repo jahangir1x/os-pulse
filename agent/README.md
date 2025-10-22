@@ -17,11 +17,11 @@ OS-Pulse provides comprehensive monitoring of Windows file operations and proces
 - **API Hooking**: Zero-overhead dynamic instrumentation
 - **Live Console Output**: Color-coded event display
 
-### 🌐 **API Integration** ✨ *NEW*
-- **External APIs**: Forward events to SIEM, log aggregation, or analytics platforms
-- **Async Processing**: Non-blocking event transmission with buffering
-- **Retry Logic**: Automatic retry with exponential backoff
-- **Batch Processing**: Configurable batch sizes for optimal performance
+### 🌐 **API Integration** ✨ *SIMPLIFIED*
+- **External APIs**: Forward events immediately to SIEM, log aggregation, or analytics platforms
+- **Immediate Processing**: Fire-and-forget event transmission with no buffering/queuing
+- **Simple HTTP**: Uses requests library for reliable synchronous HTTP calls
+- **Background Threads**: Non-blocking event sending via daemon threads
 - **Health Monitoring**: Built-in connection testing and statistics
 
 ### 🏗️ **Enterprise-Ready Architecture**
@@ -39,9 +39,11 @@ OS-Pulse provides comprehensive monitoring of Windows file operations and proces
 ├─────────────────┤    ├─────────────────┤    ├─────────────────┤    ├─────────────────┤
 │ • Process Mgmt  │    │ • File Hooks    │    │ • ReadFile()    │    │ • Event Storage │
 │ • Event Display │◄──►│ • Process Hooks │    │ • WriteFile()   │    │ • Threat Intel  │
-│ • API Client    │    │ • Event Sender  │    │ • NtCreateProc()│◄──►│ • Analytics     │
-│ • Async Queue   │    │ • Error Handler │    │ • Hooked APIs   │    │ • Dashboards    │
+│ • HTTP Client   │    │ • Event Sender  │    │ • NtCreateProc()│◄──►│ • Analytics     │
+│ • Immediate Send│    │ • Error Handler │    │ • Hooked APIs   │    │ • Dashboards    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+
+Future: controller-go/ will provide a Go-based alternative to the Python controller
 ```
 
 ## 🚀 Quick Start
@@ -132,14 +134,21 @@ agent/
 ├── 📂 controller/                  # Python Process Controller
 │   ├── main.py                    # CLI entry point with argparse
 │   ├── frida_controller.py        # Frida session management
-│   ├── message_handler.py         # Event processing & display
-│   ├── 🆕 api_client.py           # Async HTTP client for APIs
+│   ├── message_handler.py         # Event processing & display (simplified)
+│   ├── api_client.py              # Async HTTP client for APIs
 │   ├── config.py                  # Configuration management
-│   ├── 🆕 test_api_integration.py # API integration tests
-│   ├── 🆕 test_api_server.py      # Mock API server for testing
-│   ├── requirements.txt           # Python dependencies
+│   ├── test_api_integration.py    # API integration tests
+│   ├── test_api_server.py         # Mock API server for testing
+│   ├── requirements.txt           # Python dependencies (includes requests)
 │   ├── setup.bat                  # Automated environment setup
-│   └── 🆕 API_INTEGRATION.md      # Comprehensive API guide
+│   └── API_INTEGRATION.md         # Comprehensive API guide
+├── 📂 controller-go/              # 🚧 Future Go Controller (In Development)
+│   ├── main.go                    # CLI entry point
+│   ├── frida_controller.go        # Frida session management
+│   ├── message_handler.go         # Event processing & API forwarding
+│   ├── go.mod                     # Go module dependencies
+│   ├── build.bat                  # Build script
+│   └── README.md                  # Go controller documentation
 └── 📂 .github/
     └── copilot-instructions.md    # AI assistant context
 ```
@@ -235,38 +244,26 @@ const config: Partial<HookConfiguration> = {
 # Logging
 $env:OSPULSE_LOG_LEVEL="DEBUG"
 
-# API Integration
+# API Integration (Simplified - No Buffering)
 $env:OSPULSE_API_ENABLED="true"
 $env:OSPULSE_API_ENDPOINT="http://your-api-server.com/api/events"
 $env:OSPULSE_API_KEY="your-api-key"
 $env:OSPULSE_API_TIMEOUT="10"
-$env:OSPULSE_API_RETRY_COUNT="3"
-$env:OSPULSE_API_BATCH_SIZE="10"
-$env:OSPULSE_API_BATCH_TIMEOUT="5"
 ```
 
 **Programmatic Configuration:**
 ```python
 from message_handler import MessageHandler
-import asyncio
 
-async def configure_monitoring():
-    handler = MessageHandler()
+def configure_monitoring():
+    # API integration now uses simple requests library
+    handler = MessageHandler(enable_api=True)
     
-    # Enable API with custom settings
-    await handler.enable_api(
-        endpoint="http://localhost:8080/api/events",
-        api_key="your-api-key"
-    )
-    
+    # Events are sent immediately - no async needed
     # Monitor some processes...
     
-    # Get statistics
-    stats = await handler.get_api_stats()
-    print(f"Sent {stats['events_sent']} events")
-    
     # Cleanup
-    await handler.shutdown()
+    handler.shutdown()
 ```
 
 ## 🧪 Testing & Validation
@@ -497,7 +494,35 @@ We welcome contributions! Here's how to get started:
 - **Performance Tests**: Validate performance impact
 - **Security Tests**: Ensure no security regressions
 
-## 📞 Support & Resources
+## � Future Development
+
+### 🔮 **Go Controller** 🚧 *In Development*
+A Go-based alternative to the Python controller is being developed in `controller-go/`:
+
+**Benefits of Go Controller:**
+- **Single Executable**: No runtime dependencies
+- **Better Performance**: Compiled native performance
+- **Lower Memory Usage**: More efficient resource utilization
+- **Simpler Deployment**: Just copy the executable
+
+**Current Status:**
+- ✅ Project structure defined
+- ✅ CLI interface with Cobra
+- ✅ Basic Frida Go API integration
+- ✅ HTTP client for API forwarding
+- 🚧 Frida Go bindings integration (pending)
+- 🚧 Complete feature parity with Python controller
+
+**Usage (Future):**
+```bash
+# Build the Go controller
+cd controller-go && go build -o os-pulse.exe
+
+# Use identical CLI to Python version
+./os-pulse.exe spawn -e "C:\Windows\System32\notepad.exe" --enable-api
+```
+
+## �📞 Support & Resources
 
 ### 📚 **Documentation**
 - **API Integration Guide**: `controller/API_INTEGRATION.md`

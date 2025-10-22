@@ -23,8 +23,9 @@
 - **File operation tracking** (ReadFile/WriteFile with intelligent content extraction)
 - **Process creation monitoring** (NtCreateUserProcess and legacy APIs)
 - **Event streaming** from injector to controller via Frida messaging
-- **🆕 API Integration** - Async HTTP client for external API forwarding with batching and retry logic
+- **🆕 API Integration** - Simple HTTP client for immediate external API forwarding (no queuing/buffering)
 - **🆕 Enterprise Features** - SIEM integration, analytics pipelines, and threat detection platforms
+- **🚧 Go Controller** - Future Go-based alternative controller implementation
 - **Extensible architecture** for additional monitoring capabilities
 
 ## Component Details
@@ -99,11 +100,18 @@ controller/
 │   ├── frida_controller.py  # Core Frida session management with async cleanup
 │   ├── message_handler.py   # Event processing, display, and API forwarding
 │   └── config.py           # Configuration management with environment variables
-├── 🌐 API Integration (NEW)
-│   ├── api_client.py        # Async HTTP client with batching and retry logic
+├── 🌐 API Integration (SIMPLIFIED)
+│   ├── api_client.py        # Async HTTP client (legacy - still functional)
+│   ├── message_handler.py   # Now uses requests library for immediate sending
 │   ├── test_api_integration.py # Comprehensive API integration test suite
 │   ├── test_api_server.py   # Mock Flask API server for testing
 │   └── API_INTEGRATION.md   # Comprehensive API integration documentation
+├── 🚧 Future Go Controller
+│   ├── main.go             # CLI entry point with Cobra
+│   ├── frida_controller.go # Frida session management
+│   ├── message_handler.go  # Event processing & API forwarding
+│   ├── go.mod              # Go module dependencies
+│   └── README.md           # Go controller documentation
 ├── 🧪 Testing & Validation
 │   ├── test_controller.py   # Core functionality test suite
 │   └── test-api.bat        # Quick API integration test script
@@ -112,7 +120,7 @@ controller/
 │   ├── spawn-notepad.bat   # Quick spawn launcher
 │   └── attach-notepad.bat  # Quick attach launcher
 └── 📦 Dependencies
-    └── requirements.txt     # Python dependencies (includes aiohttp, flask)
+    └── requirements.txt     # Python dependencies (includes requests, aiohttp, flask)
 ```
 
 ## Development Workflows
@@ -151,21 +159,17 @@ $env:OSPULSE_API_ENDPOINT="http://localhost:8080/api/events"
 python main.py spawn --executable "C:\Windows\System32\notepad.exe"
 ```
 
-## 🆕 API Integration Features
+## 🆕 API Integration Features (SIMPLIFIED)
 
 ### Configuration Management
 
 **Environment Variables:**
 ```powershell
-# API Integration
+# API Integration (Simplified)
 $env:OSPULSE_API_ENABLED="true"           # Enable API forwarding
 $env:OSPULSE_API_ENDPOINT="http://..."    # API endpoint URL
 $env:OSPULSE_API_KEY="your-key"           # Authentication key
 $env:OSPULSE_API_TIMEOUT="10"             # Request timeout (seconds)
-$env:OSPULSE_API_RETRY_COUNT="3"          # Number of retry attempts
-$env:OSPULSE_API_RETRY_DELAY="1"          # Delay between retries (seconds)
-$env:OSPULSE_API_BATCH_SIZE="10"          # Events per batch
-$env:OSPULSE_API_BATCH_TIMEOUT="5"        # Batch timeout (seconds)
 
 # Logging
 $env:OSPULSE_LOG_LEVEL="DEBUG"            # DEBUG, INFO, WARNING, ERROR
@@ -216,24 +220,20 @@ class ApiClientManager:
 
 ### Message Handler Integration (`controller/message_handler.py`)
 
-**Enhanced MessageHandler Features:**
-- **Async API Client Integration**: Non-blocking event forwarding
+**Simplified MessageHandler Features:**
+- **Simple HTTP Integration**: Uses requests library for immediate event forwarding
 - **Dual Output**: Console display + API forwarding simultaneously
 - **Event Enrichment**: Adds metadata and timestamps to events
-- **Performance Monitoring**: Tracks API client statistics
-- **Lifecycle Management**: Proper async initialization and cleanup
+- **Background Threading**: Non-blocking event sending via daemon threads
+- **Error Resilience**: Graceful handling of API failures without blocking monitoring
 
 **Key Methods:**
 ```python
 class MessageHandler:
-    async def _init_api_client(self) -> None
-    def _send_to_api_async(self, event_type: str, event_data: Dict[str, Any]) -> None
-    async def enable_api(self, endpoint: str = None, api_key: str = None) -> None
-    async def disable_api(self) -> None
-    async def shutdown(self) -> None
-    async def flush_api_events(self) -> int
-    async def test_api_connection(self) -> bool
-    async def get_api_stats(self) -> Dict[str, Any]
+    def _send_to_api(self, event_type: str, event_data: Dict[str, Any]) -> None
+    def _send_api_event(self, event_type: str, event_data: Dict[str, Any]) -> None
+    def shutdown(self) -> None
+    def flush_api_events(self) -> int  # No-op since no buffering
 ```
 
 ## Message Flow and Communication
@@ -243,7 +243,7 @@ class MessageHandler:
 2. **Event Data** is structured with rich metadata and sent via `send()` to host
 3. **Controller** receives events through Frida message handlers
 4. **Message Handler** processes events for console display AND API forwarding
-5. **🆕 API Client** batches events and sends to external APIs with retry logic
+5. **🆕 HTTP Client** sends events immediately to external APIs with fire-and-forget pattern
 6. **🆕 External Systems** receive structured events for analysis and storage
 
 ### Enhanced Event Structure
@@ -315,6 +315,59 @@ recv('get_status', (message) => {
         }
     });
 });
+```
+
+## 🚧 Go Controller (Future Implementation)
+
+### Overview
+The `controller-go/` directory contains a future Go-based alternative to the Python controller, offering:
+
+**Benefits:**
+- **Single Executable**: No runtime dependencies - just copy and run
+- **Better Performance**: Compiled native performance vs interpreted Python
+- **Lower Memory Usage**: More efficient resource utilization
+- **Simpler Deployment**: No Python environment or virtual environment setup needed
+
+**Architecture:**
+```go
+// main.go - CLI interface using Cobra
+func main() {
+    rootCmd := &cobra.Command{
+        Use: "os-pulse",
+        Short: "OS-Pulse Windows System Monitor Controller",
+    }
+    rootCmd.AddCommand(createSpawnCommand(), createAttachCommand())
+    rootCmd.Execute()
+}
+
+// frida_controller.go - Core Frida session management
+type FridaController struct {
+    deviceManager *frida.DeviceManager
+    session       *frida.Session
+    script        *frida.Script
+    messageHandler *MessageHandler
+}
+
+// message_handler.go - Event processing with immediate API forwarding
+type MessageHandler struct {
+    httpClient  *http.Client
+    apiEnabled  bool
+    apiEndpoint string
+}
+```
+
+**Current Status:**
+- ✅ Project structure and CLI interface complete
+- ✅ HTTP client for API integration implemented
+- ✅ Message handler with immediate sending (no buffering)
+- 🚧 Frida Go bindings integration (pending stable release)
+- 🚧 Complete feature parity with Python controller
+
+**Usage (When Complete):**
+```bash
+cd controller-go
+go build -o os-pulse.exe
+./os-pulse.exe spawn -e "C:\Windows\System32\notepad.exe" --enable-api
 ```
 
 ## 🆕 Testing and Validation Infrastructure
@@ -398,24 +451,49 @@ if (!pointer.isNull() && this.isValidMemoryRange(pointer, size)) {
 }
 ```
 
-### Async Integration Patterns
+### Simple Integration Patterns
 ```python
-# Non-blocking API operations in message handler
-def _send_to_api_async(self, event_type: str, event_data: Dict[str, Any]) -> None:
-    """Send event to API without blocking console output"""
-    if self.api_enabled and self.api_client:
-        # Create task for background execution
-        asyncio.create_task(self._send_event_to_api(event_type, event_data))
+# Immediate API sending using requests in background thread
+def _send_to_api(self, event_type: str, data: Dict[str, Any]):
+    """Send event to API immediately using requests (simple approach)"""
+    if not self.api_enabled or not self.session:
+        return
+        
+    # Fire and forget - run in background thread
+    def send_in_thread():
+        try:
+            self._send_api_event(event_type, data)
+        except Exception as e:
+            print(f"{Fore.YELLOW}[API] Send failed: {e}")
+    
+    # Start background thread for immediate sending
+    thread = threading.Thread(target=send_in_thread, daemon=True)
+    thread.start()
 
-async def _send_event_to_api(self, event_type: str, event_data: Dict[str, Any]) -> None:
-    """Async method for actual API communication"""
+def _send_api_event(self, event_type: str, data: Dict[str, Any]):
+    """Send single event to API immediately using requests"""
     try:
-        if event_type == 'file_operation':
-            success = await self.api_client.send_file_operation(...)
-        elif event_type == 'process_creation':
-            success = await self.api_client.send_process_creation(...)
+        # Prepare event payload
+        payload = {
+            'event_type': event_type,
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'source': 'os-pulse-controller',
+            'data': data
+        }
+        
+        # Send POST request
+        response = self.session.post(
+            f"{self.api_endpoint}/events",
+            json=payload,
+            timeout=config.api_timeout
+        )
+        
+        if response.status_code == 200:
+            print(f"{Fore.GREEN}[API] Sent {event_type} event successfully")
+    except requests.exceptions.ConnectionError:
+        print(f"{Fore.YELLOW}[API] Connection failed - dropping {event_type} event")
     except Exception as e:
-        self.logger.error(f"API send failed: {e}")
+        print(f"{Fore.YELLOW}[API] Failed to send {event_type}: {e}")
 ```
 
 ### Configuration Management Patterns
@@ -573,13 +651,20 @@ class ThreatDetector:
 - **Environment Configuration**: Use environment variables for API settings
 - **Non-blocking Operations**: API calls should never block console output or monitoring
 - **Error Resilience**: API failures should not stop monitoring or crash the application
-- **Batch Optimization**: Consider batching for high-volume scenarios
+- **No Queuing/Buffering**: Events are sent immediately using fire-and-forget pattern
 - **Security**: Always use HTTPS in production and secure API key management
 - **Testing**: Use the provided mock API server for development and testing
 
+### 🚧 Go Controller Development Guidelines
+- **Future Implementation**: The Go controller in `controller-go/` is a future alternative
+- **Frida Go Bindings**: Requires stable Frida Go bindings for completion
+- **CLI Compatibility**: Should maintain identical CLI interface to Python controller
+- **Performance Focus**: Emphasize single executable and performance benefits
+- **API Integration**: Maintains same immediate-sending pattern as simplified Python controller
+
 ---
 
-This comprehensive context enables AI assistants to understand the complete OS-Pulse architecture including the new API integration capabilities, providing accurate assistance for development, debugging, and enhancement tasks across both the injector and controller components with their external API connectivity features.
+This comprehensive context enables AI assistants to understand the complete OS-Pulse architecture including the simplified API integration approach and future Go controller implementation, providing accurate assistance for development, debugging, and enhancement tasks across both current and future components.
 
 ## Development Workflows
 

@@ -18,11 +18,11 @@ The controller serves as the orchestration layer that manages Frida injection, p
 - **Interactive Mode**: Send commands to injected agents
 - **Structured Logging**: Configurable log levels and formatting
 
-### 🌐 **API Integration** ✨ *NEW*
-- **Async HTTP Client**: Non-blocking event transmission to external APIs
-- **Batch Processing**: Configurable batching for optimal performance
-- **Retry Logic**: Automatic retry with exponential backoff
-- **Health Monitoring**: Connection testing and performance statistics
+### 🌐 **API Integration** ✨ *SIMPLIFIED*
+- **Simple HTTP Client**: Immediate event transmission using requests library
+- **Fire-and-Forget**: No buffering or queuing - events sent immediately
+- **Background Threads**: Non-blocking event sending via daemon threads
+- **Error Resilience**: Graceful handling of connection failures
 - **Multiple Destinations**: Support for SIEM, log aggregation, and analytics platforms
 
 ## 🏗️ Architecture
