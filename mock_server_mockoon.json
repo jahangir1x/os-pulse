@@ -12,12 +12,43 @@
       "uuid": "5d81434f-d90f-4407-8d9b-ee0654ab01ac",
       "type": "http",
       "documentation": "",
-      "method": "post",
-      "endpoint": "",
+      "method": "get",
+      "endpoint": "api/events/:id",
       "responses": [
         {
           "uuid": "08438668-7349-4311-9017-064e58fda996",
-          "body": "{}",
+          "body": "[\n  {\n    \"event_type\": \"file_operation\",\n    \"data\": {\n      \"filePath\": \"\\\\\\\\?\\\\C:\\\\Windows\\\\System32\\\\UIAutomationCore.dll\",\n      \"bytesTransferred\": 4,\n      \"content\": \"AB 02 01 30\", // hex data\n      \"timestamp\": \"2025-10-22T16:03:11.372Z\",\n      \"operation\": \"ReadFile\",\n      \"metadata\": {\n        \"processName\": \"Notepad.exe\",\n        \"processId\": 800\n      }\n    }\n  },\n  {\n    \"event_type\": \"http_network_operation\",\n    \"data\": {\n      \"base64RequestBody\": \"somethingsomethingbase64\",\n      \"bytesTransferred\": 20,\n      \"base64Response\": \"somebase64response\",\n      \"timestamp\": \"2025-10-22T16:03:11.372Z\",\n      \"url\": \"something.com/some_endpoint\",\n      \"method\": \"post\",\n      \"metadata\": {\n        \"processName\": \"Notepad.exe\",\n        \"processId\": 800\n      }\n    }\n  },\n  {\n    \"event_type\": \"raw_network_operation\",\n    \"data\": {\n      \"request\": \"AB CD 02 30\", // hex\n      \"bytesTransferred\": 20,\n      \"response\": \"02 AB CD EF\",\n      \"timestamp\": \"2025-10-22T16:03:11.372Z\",\n      \"host\": \"192.168.100.100\",\n      \"protocol\": \"tcp\", // or udp, dns\n      \"metadata\": {\n        \"processName\": \"Notepad.exe\",\n        \"processId\": 800\n      }\n    }\n  },\n  {\n    \"event_type\": \"file_operation\",\n    \"data\": {\n      \"filePath\": \"\\\\\\\\?\\\\C:\\\\Windows\\\\System32\\\\UIAutomationCore.dll\",\n      \"bytesTransferred\": 2,\n      \"content\": \"AB DE FE 02 03\", // hex data\n      \"timestamp\": \"2025-10-22T16:03:11.372Z\",\n      \"operation\": \"WriteFile\",\n      \"metadata\": {\n        \"processName\": \"Notepad.exe\",\n        \"processId\": 800\n      }\n    }\n  },\n  {\n    \"event_type\": \"process_creation_operation\",\n    \"data\": {\n      \"filePath\": \"\\\\\\\\?\\\\C:\\\\Windows\\\\System32\\\\paint.exe\",\n      \"args\": \"--some --arg1 --arg2\",\n      \"timestamp\": \"2025-10-22T16:03:11.372Z\",\n      \"metadata\": {\n        \"processName\": \"Notepad.exe\",\n        \"processId\": 800\n      }\n    }\n  }\n]",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "3d7550b2-0d1e-4706-9dd1-987a58e84d3a",
+      "type": "http",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/create-session",
+      "responses": [
+        {
+          "uuid": "f0738c8b-6780-4ccf-b56c-0271e53d58e5",
+          "body": "{\n  \"sessionId\": \"abcd-efghskid-lsdkfjd\",\n  \"vncServerHost\": \"192.168.0.102\",\n  \"vncServerPort\": \"5900\"\n}",
           "latency": 0,
           "statusCode": 200,
           "label": "",
@@ -44,6 +75,10 @@
     {
       "type": "route",
       "uuid": "5d81434f-d90f-4407-8d9b-ee0654ab01ac"
+    },
+    {
+      "type": "route",
+      "uuid": "3d7550b2-0d1e-4706-9dd1-987a58e84d3a"
     }
   ],
   "proxyMode": false,
