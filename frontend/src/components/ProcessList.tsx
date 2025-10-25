@@ -167,18 +167,16 @@ export function ProcessList({ processes, selectedEvent, onEventSelect, onEventDe
 
   return (
     <Card className="h-full flex flex-col">
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-          <div className="px-6 pt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="processes">
-                Processes ({processes.length})
-              </TabsTrigger>
-              <TabsTrigger value="details">
-                Details
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="processes">
+              Processes ({processes.length})
+            </TabsTrigger>
+            <TabsTrigger value="details">
+              Details
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="processes" className="flex-1 overflow-hidden px-6 pb-6">
             <div className="h-full overflow-y-auto pr-2">
