@@ -1,7 +1,8 @@
 {
-  "name": "vite-react-typescript-starter",
+  "name": "os-pulse-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "OS-Pulse Frontend - Real-time malware analysis platform with Windows API monitoring dashboard",
   "type": "module",
   "scripts": {
     "dev": "vite",

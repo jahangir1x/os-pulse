@@ -135,7 +135,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
       {/* Header */}
       <div className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold">Analysis Dashboard</h1>
+          <h1 className="text-2xl font-bold">OS-Pulse Dashboard</h1>
           <p className="text-muted-foreground">
             Session: {sessionData.sessionId} | VNC: {sessionData.vncServerHost}:{sessionData.vncServerPort}
           </p>

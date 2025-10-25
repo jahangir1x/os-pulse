@@ -1,3 +1,13 @@
+/**
+ * OS-Pulse Frontend - Main Application Component
+ * 
+ * A sophisticated React-based dashboard for real-time Windows system monitoring
+ * and malware analysis. Provides comprehensive visualization of file operations,
+ * process creation, and API events through dynamic instrumentation.
+ * 
+ * @author OS-Pulse Team
+ * @version 1.0.0
+ */
 import './App.css'
 import { useState } from 'react'
 import { FileUpload } from './components/FileUpload'

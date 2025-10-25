@@ -1,0 +1,63 @@
+/**
+ * OS-Pulse Frontend - Application Styles
+ * 
+ * Global styles for the OS-Pulse Windows system monitoring dashboard.
+ * Complements Tailwind CSS with application-specific customizations.
+ */
+
+/* Custom OS-Pulse Variables */
+:root {
+  --ospulse-primary: #3b82f6;
+  --ospulse-accent: #f59e0b;
+  --ospulse-danger: #ef4444;
+  --ospulse-success: #10b981;
+  --ospulse-monitor: #8b5cf6;
+}
+
+/* Enhanced scrollbar styling for event tables */
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scroll-container::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Pulse animation for live status indicators */
+@keyframes ospulse-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.ospulse-live {
+  animation: ospulse-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Focus styles for accessibility */
+.ospulse-focus:focus-visible {
+  outline: 2px solid var(--ospulse-primary);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --ospulse-primary: #0066cc;
+    --ospulse-accent: #cc7a00;
+  }
+}

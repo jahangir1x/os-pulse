@@ -1,19 +1,162 @@
-# React + TypeScript + Vite
+# OS-Pulse Frontend 🔍
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Real-time Windows System Monitoring Dashboard**
 
-Currently, two official plugins are available:
+A sophisticated React-based frontend for the OS-Pulse Windows system monitoring framework. This dashboard provides real-time visualization of file operations, process creation, and API events with comprehensive malware analysis capabilities.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://reactjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-7.1-purple?logo=vite)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.1-blue?logo=tailwindcss)](https://tailwindcss.com)
 
-## React Compiler
+## 🎯 Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🖥️ **Real-Time Dashboard**
+- **VNC Integration**: Live view of monitored virtual environments via noVNC
+- **Process Monitoring**: Real-time process list with PID tracking
+- **Event Analysis**: Tabbed interface for HTTP, connections, and file operations
+- **Live Updates**: WebSocket integration for real-time event streaming
 
-## Expanding the ESLint configuration
+### 📊 **Analysis Capabilities**
+- **File Operations**: ReadFile/WriteFile monitoring with content extraction
+- **Network Activity**: HTTP requests and raw connection tracking
+- **Process Creation**: NtCreateUserProcess and legacy API monitoring
+- **Behavioral Analysis**: Process relationship tracking and timeline visualization
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🏗️ **Modern Architecture**
+- **React 19**: Latest React with TypeScript for type safety
+- **Shadcn/UI**: Accessible component library with Radix UI primitives
+- **Tailwind CSS**: Utility-first styling with responsive design
+- **Vite**: Fast development and optimized builds
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend API   │    │  OS-Pulse Agent │
+│   (React/TS)    │    │   (Node.js)     │    │ (Frida/Python)  │
+├─────────────────┤    ├─────────────────┤    ├─────────────────┤
+│ • Dashboard     │    │ • Session Mgmt  │    │ • API Hooking   │
+│ • VNC Viewer    │◄──►│ • Event Storage │◄──►│ • File Monitor  │
+│ • Event Tables  │    │ • WebSocket     │    │ • Process Track │
+│ • Process List  │    │ • File Upload   │    │ • Event Stream  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+- **Node.js 18+** with npm
+- **Backend API** running on port 3003
+- **OS-Pulse Agent** for data collection
+
+### Development Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Environment Configuration
+
+The frontend expects the backend API to be running on `http://localhost:3003` with the following endpoints:
+- `POST /api/create-session` - File upload and session creation
+- `GET /api/events/:sessionId` - Event data retrieval
+- WebSocket connection for real-time updates
+
+## 📱 Component Structure
+
+### Core Components
+
+#### App.tsx
+Main application router managing state between:
+- **FileUpload**: Initial malware upload interface
+- **AnalysisDashboard**: Main monitoring dashboard
+
+#### AnalysisDashboard.tsx
+Primary dashboard layout with:
+- **VNC Display**: noVNC integration for live environment view
+- **Process Sidebar**: Real-time process monitoring
+- **Event Tables**: Comprehensive event analysis tabs
+
+#### EventTables.tsx
+Tabbed interface displaying:
+- **HTTP Requests**: Method, URL, bytes, originating process
+- **Connections**: Raw network operations with protocol/host details  
+- **File Operations**: Read/write operations with file paths and content
+
+#### ProcessList.tsx
+Process monitoring sidebar showing:
+- Unique processes extracted from monitoring events
+- Process names, PIDs, and timestamps
+- Process relationship tracking
+
+### UI Components (shadcn/ui)
+- **Tabs**: Event categorization and navigation
+- **Tables**: Structured data display with sorting
+- **Cards**: Information grouping and layout
+- **Buttons**: Action triggers and navigation
+- **Upload**: File selection and progress indication
+
+## 🔄 Data Flow
+
+### Event Processing Pipeline
+```
+OS-Pulse Agent → Backend API → WebSocket → Frontend Dashboard
+     ↓              ↓            ↓              ↓
+File/Process → Event Storage → Real-time → React State
+  Events                      Updates      Management
+```
+
+### Session Management
+1. **File Upload**: User uploads malware sample
+2. **Session Creation**: Backend creates isolated analysis session
+3. **VNC Connection**: noVNC connects to virtual environment
+4. **Event Streaming**: Real-time event data via WebSocket
+5. **Analysis Display**: Dashboard updates with live monitoring data
+
+## 🎨 Styling & Theming
+
+### Design System
+- **Tailwind CSS 4.1**: Utility-first styling with custom configuration
+- **Dark/Light Themes**: Automatic theme switching with next-themes
+- **Responsive Design**: Mobile-first approach with breakpoint optimization
+- **Accessibility**: WCAG 2.1 compliance through Radix UI primitives
+
+### Color Scheme
+- **Primary**: Security-focused blue tones
+- **Accent**: Warning oranges and error reds
+- **Neutral**: Professional grays for data display
+- **Success**: Process completion and health indicators
+
+## 🧪 Testing & Quality
+
+### Code Quality
+```bash
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+
+# Format code
+npm run format
+```
+
+### Development Tools
+- **ESLint**: Code quality and consistency
+- **TypeScript**: Static type checking
+- **Prettier**: Code formatting
+- **React DevTools**: Component debugging
 
 ```js
 export default defineConfig([

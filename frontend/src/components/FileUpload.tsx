@@ -62,9 +62,9 @@ export function FileUpload({ onSessionCreated }: FileUploadProps) {
       
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Malware Analysis Platform</CardTitle>
+          <CardTitle className="text-2xl font-bold">OS-Pulse Analysis Platform</CardTitle>
           <CardDescription>
-            Upload a file to start the analysis session
+            Upload a file to start real-time Windows API monitoring and behavioral analysis
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

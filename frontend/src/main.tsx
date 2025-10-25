@@ -1,3 +1,9 @@
+/**
+ * OS-Pulse Frontend - Application Entry Point
+ * 
+ * Initializes the React application with theme provider for the
+ * OS-Pulse Windows system monitoring dashboard.
+ */
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
