@@ -138,7 +138,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
         <div>
           <h1 className="text-2xl font-bold">OS-Pulse Dashboard</h1>
           <p className="text-muted-foreground">
-            Session: {sessionData.sessionId} | VNC: {sessionData.vncServerHost}:{sessionData.vncServerPort}
+            Session: {sessionData.sessionId}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -170,25 +170,20 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
               <CardHeader>
                 <CardTitle>Virtual Machine Display</CardTitle>
               </CardHeader>
-              <CardContent className="h-full flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <div className="w-32 h-32 mx-auto mb-4 bg-muted/50 rounded-lg flex items-center justify-center">
-                    <div className="text-4xl">🖥️</div>
-                  </div>
-                  <p className="text-lg font-medium">noVNC Display</p>
-                  <p className="text-sm">
-                    VNC Server: {sessionData.vncServerHost}:{sessionData.vncServerPort}
-                  </p>
-                  <p className="text-xs mt-2 text-muted-foreground">
-                    This area will be replaced with the noVNC client
-                  </p>
-                </div>
+              <CardContent className="w-full h-full p-4 flex items-center justify-center">
+                <iframe
+                  src="http://127.0.0.1:6080/vnc.html"
+                  className="border-0 w-full h-full rounded-lg"
+                  // style={{ aspectRatio: '16/9' }}
+                  title="noVNC Viewer"
+                  allow="fullscreen"
+                />
               </CardContent>
             </Card>
           </div>
 
           {/* Event Tables */}
-          <div className="h-80">
+          <div className="h-70">
             <EventTables events={events} onEventSelect={setSelectedEvent} />
           </div>
         </div>

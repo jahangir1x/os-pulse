@@ -70,6 +70,4 @@ export interface Process {
 
 export interface SessionData {
   sessionId: string;
-  vncServerHost: string;
-  vncServerPort: string;
 }
