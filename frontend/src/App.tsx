@@ -1,13 +1,23 @@
 import './App.css'
-import { Button } from './components/ui/button'
+import { useState } from 'react'
+import { FileUpload } from './components/FileUpload'
+import { AnalysisDashboard } from './components/AnalysisDashboard'
+import type { SessionData } from './types/analysis'
 
 function App() {
+  const [sessionData, setSessionData] = useState<SessionData | null>(null)
+
+  const handleSessionCreated = (data: SessionData) => {
+    setSessionData(data)
+  }
 
   return (
     <>
-      <div className="flex min-h-svh flex-col items-center justify-center">
-        <Button>Click me</Button>
-      </div>
+      {sessionData ? (
+        <AnalysisDashboard sessionData={sessionData} />
+      ) : (
+        <FileUpload onSessionCreated={handleSessionCreated} />
+      )}
     </>
   )
 }
