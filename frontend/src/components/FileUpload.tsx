@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { ThemeToggle } from './theme-toggle';
 import type { SessionData } from '../types/analysis';
 
 interface FileUploadProps {
@@ -53,7 +54,12 @@ export function FileUpload({ onSessionCreated }: FileUploadProps) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
+    <div className="flex items-center justify-center min-h-screen p-4 relative">
+      {/* Theme toggle positioned in top-right corner */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Malware Analysis Platform</CardTitle>

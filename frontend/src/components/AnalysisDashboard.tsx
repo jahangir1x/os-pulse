@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ProcessList } from './ProcessList';
 import { EventTables } from './EventTables';
+import { ThemeToggle } from './theme-toggle';
 import type { Event, Process, SessionData } from '../types/analysis';
 
 interface AnalysisDashboardProps {
@@ -139,7 +140,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
             Session: {sessionData.sessionId} | VNC: {sessionData.vncServerHost}:{sessionData.vncServerPort}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             {isLoading ? 'Loading...' : `${events.length} events`}
@@ -147,6 +148,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
           <div className="text-xs text-muted-foreground">
             Last update: {lastUpdate.toLocaleTimeString()}
           </div>
+          <ThemeToggle />
         </div>
       </div>
 
