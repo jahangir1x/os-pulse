@@ -131,9 +131,9 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
   }, [sessionData.sessionId]);
 
   return (
-    <div className="h-screen flex flex-col p-4 gap-4 bg-background">
+    <div className="h-screen flex flex-col p-4 gap-4 bg-background overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-2xl font-bold">Analysis Dashboard</h1>
           <p className="text-muted-foreground">

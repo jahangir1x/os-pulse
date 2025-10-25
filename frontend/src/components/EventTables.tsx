@@ -28,11 +28,11 @@ export function EventTables({ events }: EventTablesProps) {
   console.log('EventTables - File events:', fileEvents.length);
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-lg">Event Analysis</CardTitle>
       </CardHeader>
-      <CardContent className="h-full">
+      <CardContent className="flex-1 overflow-hidden">
         <Tabs defaultValue="http" className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="http">
@@ -47,7 +47,7 @@ export function EventTables({ events }: EventTablesProps) {
           </TabsList>
 
           <TabsContent value="http" className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto pr-2">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -94,7 +94,7 @@ export function EventTables({ events }: EventTablesProps) {
           </TabsContent>
 
           <TabsContent value="connections" className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto pr-2">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -139,7 +139,7 @@ export function EventTables({ events }: EventTablesProps) {
           </TabsContent>
 
           <TabsContent value="files" className="flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto pr-2">
               <Table>
                 <TableHeader>
                   <TableRow>
