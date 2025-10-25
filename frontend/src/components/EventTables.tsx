@@ -1,11 +1,13 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
+// import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import type { Event, FileOperationEvent, HttpNetworkEvent, RawNetworkEvent } from '../types/analysis';
 
 interface EventTablesProps {
   events: Event[];
+  onEventSelect?: (event: Event) => void;
 }
 
 function formatTimestamp(timestamp: string): string {
@@ -16,7 +18,7 @@ function formatBytes(bytes: number): string {
   return `${bytes} B`;
 }
 
-export function EventTables({ events }: EventTablesProps) {
+export function EventTables({ events, onEventSelect }: EventTablesProps) {
   // Filter events by type, maintain the order from the API response
   const httpEvents = events.filter((e): e is HttpNetworkEvent => e.event_type === 'http_network_operation');
   const rawNetworkEvents = events.filter((e): e is RawNetworkEvent => e.event_type === 'raw_network_operation');
@@ -29,9 +31,6 @@ export function EventTables({ events }: EventTablesProps) {
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3 flex-shrink-0">
-        <CardTitle className="text-lg">Event Analysis</CardTitle>
-      </CardHeader>
       <CardContent className="flex-1 overflow-hidden">
         <Tabs defaultValue="http" className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
@@ -60,7 +59,11 @@ export function EventTables({ events }: EventTablesProps) {
                 </TableHeader>
                 <TableBody>
                   {httpEvents.map((event, index) => (
-                    <TableRow key={`http-${event.data.timestamp}-${index}`}>
+                    <TableRow 
+                      key={`http-${event.data.timestamp}-${index}`}
+                      className="cursor-pointer hover:bg-muted/70"
+                      onClick={() => onEventSelect?.(event)}
+                    >
                       <TableCell className="font-mono text-xs">
                         {formatTimestamp(event.data.timestamp)}
                       </TableCell>
@@ -107,7 +110,11 @@ export function EventTables({ events }: EventTablesProps) {
                 </TableHeader>
                 <TableBody>
                   {rawNetworkEvents.map((event, index) => (
-                    <TableRow key={`network-${event.data.timestamp}-${index}`}>
+                    <TableRow 
+                      key={`network-${event.data.timestamp}-${index}`}
+                      className="cursor-pointer hover:bg-muted/70"
+                      onClick={() => onEventSelect?.(event)}
+                    >
                       <TableCell className="font-mono text-xs">
                         {formatTimestamp(event.data.timestamp)}
                       </TableCell>
@@ -152,7 +159,11 @@ export function EventTables({ events }: EventTablesProps) {
                 </TableHeader>
                 <TableBody>
                   {fileEvents.map((event, index) => (
-                    <TableRow key={`file-${event.data.timestamp}-${index}`}>
+                    <TableRow 
+                      key={`file-${event.data.timestamp}-${index}`}
+                      className="cursor-pointer hover:bg-muted/70"
+                      onClick={() => onEventSelect?.(event)}
+                    >
                       <TableCell className="font-mono text-xs">
                         {formatTimestamp(event.data.timestamp)}
                       </TableCell>

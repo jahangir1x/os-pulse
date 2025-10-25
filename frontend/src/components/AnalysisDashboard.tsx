@@ -15,6 +15,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   // Debug: log events when they change
   useEffect(() => {
@@ -188,13 +189,18 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
 
           {/* Event Tables */}
           <div className="h-80">
-            <EventTables events={events} />
+            <EventTables events={events} onEventSelect={setSelectedEvent} />
           </div>
         </div>
 
         {/* Right sidebar - Process list */}
         <div className="col-span-3">
-          <ProcessList processes={processes} />
+          <ProcessList 
+            processes={processes} 
+            selectedEvent={selectedEvent}
+            onEventSelect={setSelectedEvent}
+            onEventDeselect={() => setSelectedEvent(null)}
+          />
         </div>
       </div>
     </div>
