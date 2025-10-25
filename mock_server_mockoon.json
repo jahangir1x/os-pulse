@@ -48,7 +48,100 @@
       "responses": [
         {
           "uuid": "f0738c8b-6780-4ccf-b56c-0271e53d58e5",
-          "body": "{\n  \"sessionId\": \"abcd-efghskid-lsdkfjd\",\n  \"vncServerHost\": \"192.168.0.102\",\n  \"vncServerPort\": \"5900\"\n}",
+          "body": "{\n  \"sessionId\": \"abcd-efghskid-lsdkfjd\"\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "7f40bf00-2a6e-4558-a758-38ef4fb8591c",
+      "type": "http",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/list-processes",
+      "responses": [
+        {
+          "uuid": "d1cdacee-9903-4783-a17d-b6f289e0e05c",
+          "body": "[\n  {\n    \"name\": \"notepad.exe\",\n    \"pid\": 8028\n  },\n  {\n    \"name\": \"chrome.exe\",\n    \"pid\": 8022\n  },\n  {\n    \"name\": \"msedge.exe\",\n    \"pid\": 8122\n  },\n  {\n    \"name\": \"notepad.exe\",\n    \"pid\": 8029\n  }\n]",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "b51bacba-31fa-4847-a5fc-1e440ffa6006",
+      "type": "http",
+      "documentation": "",
+      "method": "post",
+      "endpoint": "api/start-monitor",
+      "responses": [
+        {
+          "uuid": "bec4fd3e-1e6b-41a2-ba32-4be01c074793",
+          "body": "{\n  \"message\": \"monitoring started successfully\"\n}",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "43fce2bc-6a29-4274-ada4-576c78849d7f",
+      "type": "http",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "api/monitor-modes",
+      "responses": [
+        {
+          "uuid": "fbd69f73-f43a-4bd1-86cd-8427a9e2929f",
+          "body": "[\n  {\n    \"id\": 1,\n    \"mode\": \"All Processes\"\n  },\n  {\n    \"id\": 2,\n    \"mode\": \"Specific Processes\"\n  },\n  {\n    \"id\": 3,\n    \"mode\": \"Spawn Uploaded\"\n  },\n]",
           "latency": 0,
           "statusCode": 200,
           "label": "",
@@ -79,6 +172,18 @@
     {
       "type": "route",
       "uuid": "3d7550b2-0d1e-4706-9dd1-987a58e84d3a"
+    },
+    {
+      "type": "route",
+      "uuid": "7f40bf00-2a6e-4558-a758-38ef4fb8591c"
+    },
+    {
+      "type": "route",
+      "uuid": "b51bacba-31fa-4847-a5fc-1e440ffa6006"
+    },
+    {
+      "type": "route",
+      "uuid": "43fce2bc-6a29-4274-ada4-576c78849d7f"
     }
   ],
   "proxyMode": false,

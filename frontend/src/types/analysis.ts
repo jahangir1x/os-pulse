@@ -71,3 +71,13 @@ export interface Process {
 export interface SessionData {
   sessionId: string;
 }
+
+export interface MonitorMode {
+  id: number;
+  mode: string;
+}
+
+export interface RunningProcess {
+  name: string;
+  pid: number;
+}

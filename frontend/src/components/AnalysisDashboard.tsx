@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ProcessList } from './ProcessList';
 import { EventTables } from './EventTables';
 import { ThemeToggle } from './theme-toggle';
+import { MonitoringControls } from './MonitoringControls';
 import type { Event, Process, SessionData } from '../types/analysis';
 
 interface AnalysisDashboardProps {
@@ -16,6 +17,20 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(0.8); // Start zoomed out to remove scrollbars
+
+  // Zoom control functions
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.1, 2.0)); // Max zoom 200%
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.1, 0.3)); // Min zoom 30%
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(1.0); // Reset to 100%
+  };
 
   // Debug: log events when they change
   useEffect(() => {
@@ -134,22 +149,32 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
   return (
     <div className="h-screen flex flex-col p-4 gap-4 bg-background overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold">OS-Pulse Dashboard</h1>
-          <p className="text-muted-foreground">
-            Session: {sessionData.sessionId}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            {isLoading ? 'Loading...' : `${events.length} events`}
+      <div className="flex flex-col gap-3 shrink-0">
+        {/* Main row - Title, monitoring controls, and status */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">OS-Pulse Dashboard</h1>
+            <p className="text-muted-foreground">
+              Session: {sessionData.sessionId}
+            </p>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Last update: {lastUpdate.toLocaleTimeString()}
+          
+          {/* Center - Monitoring controls */}
+          <div className="flex-1 flex justify-center px-8">
+            <MonitoringControls sessionData={sessionData} />
           </div>
-          <ThemeToggle />
+          
+          {/* Right - Status indicators */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              {isLoading ? 'Loading...' : `${events.length} events`}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Last update: {lastUpdate.toLocaleTimeString()}
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
@@ -164,17 +189,59 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
       <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
         {/* Left side - VNC area (top) and Event tables (bottom) */}
         <div className="col-span-9 flex flex-col gap-4">
-          {/* VNC Area placeholder */}
+          {/* VNC Area with zoom controls */}
           <div className="flex-1">
             <Card className="h-full">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>Virtual Machine Display</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={handleZoomOut}
+                      className="p-1 rounded hover:bg-muted transition-colors"
+                      title="Zoom Out"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                        <line x1="8" y1="11" x2="14" y2="11"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={handleResetZoom}
+                      className="px-2 py-1 text-xs rounded hover:bg-muted transition-colors"
+                      title="Reset Zoom"
+                    >
+                      1:1
+                    </button>
+                    <button
+                      onClick={handleZoomIn}
+                      className="p-1 rounded hover:bg-muted transition-colors"
+                      title="Zoom In"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                        <line x1="11" y1="8" x2="11" y2="14"/>
+                        <line x1="8" y1="11" x2="14" y2="11"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="w-full h-full p-4 flex items-center justify-center">
+              <CardContent className="w-full h-full overflow-hidden">
                 <iframe
                   src="http://127.0.0.1:6080/vnc.html"
-                  className="border-0 w-full h-full rounded-lg"
-                  // style={{ aspectRatio: '16/9' }}
+                  className="border-0 w-full h-full"
+                  style={{ 
+                    transform: `scale(${zoomLevel})`,
+                    transformOrigin: 'top left',
+                    width: `${100 / zoomLevel}%`,
+                    height: `${100 / zoomLevel}%`
+                  }}
                   title="noVNC Viewer"
                   allow="fullscreen"
                 />
