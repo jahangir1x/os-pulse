@@ -210,11 +210,13 @@ export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
               {runningProcesses.map((process) => (
                 <div
                   key={`${process.name}-${process.pid}`}
-                  className="flex items-center space-x-3 p-2 rounded hover:bg-muted"
+                  className="flex items-center space-x-3 p-2 rounded hover:bg-muted cursor-pointer transition-colors"
+                  onClick={() => handleProcessToggle(process.pid)}
                 >
                   <Checkbox
                     checked={selectedProcesses.has(process.pid)}
                     onCheckedChange={() => handleProcessToggle(process.pid)}
+                    onClick={(e) => e.stopPropagation()} // Prevent double-trigger
                   />
                   <div className="flex-1">
                     <div className="font-medium">{process.name}</div>
