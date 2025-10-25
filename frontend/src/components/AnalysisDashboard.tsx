@@ -122,7 +122,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
     fetchEvents();
 
     // Set up interval for periodic fetching
-    const interval = setInterval(fetchEvents, 1000);
+    const interval = setInterval(fetchEvents, 5000);
 
     return () => clearInterval(interval);
   }, [sessionData.sessionId]);
