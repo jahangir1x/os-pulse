@@ -82,7 +82,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
     ));
   }, [events]);
 
-  // Fetch events every 1 second
+  // Fetch events every 5 seconds and append new ones
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -99,14 +99,16 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
         console.log('Received events:', newEvents);
         
         if (Array.isArray(newEvents)) {
-          console.log('Setting events, count:', newEvents.length);
-          // Simply set the events as received from API, no additional sorting needed
-          // The API should return events in the correct order
-          setEvents(newEvents);
+          console.log('Appending new events, count:', newEvents.length);
+          
+          setEvents(prevEvents => {
+            // Simply prepend new events to the beginning (so they appear at top)
+            return [...newEvents, ...prevEvents];
+          });
+          
           setLastUpdate(new Date());
         } else {
           console.warn('Received non-array response:', newEvents);
-          setEvents([]);
         }
         
         setIsLoading(false);
