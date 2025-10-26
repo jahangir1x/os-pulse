@@ -16,6 +16,7 @@ export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
   const [runningProcesses, setRunningProcesses] = useState<RunningProcess[]>([]);
   const [selectedProcesses, setSelectedProcesses] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(false);
 
   // Fetch monitor modes on component mount
   useEffect(() => {
@@ -132,10 +133,38 @@ export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
 
       if (response.ok) {
         console.log('Monitoring started successfully');
+        setIsMonitoring(true);
         // Optionally show success message
       }
     } catch (error) {
       console.error('Failed to start monitoring:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Stop monitoring
+  const handleStopMonitoring = async () => {
+    try {
+      setIsLoading(true);
+
+      const response = await fetch('http://localhost:3003/api/monitor/stop', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sessionId: sessionData.sessionId,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Monitoring stopped successfully');
+        setIsMonitoring(false);
+        // Optionally show success message
+      }
+    } catch (error) {
+      console.error('Failed to stop monitoring:', error);
     } finally {
       setIsLoading(false);
     }
@@ -156,35 +185,48 @@ export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
 
   return (
     <div className="flex items-center gap-3">
-      <Select value={selectedMode} onValueChange={handleModeChange}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Select monitoring mode" />
-        </SelectTrigger>
-        <SelectContent>
-          {monitorModes.length === 0 ? (
-            <SelectItem value="loading" disabled>
-              Loading modes...
-            </SelectItem>
-          ) : (
-            monitorModes.map((mode) => {
-              console.log('Rendering mode:', mode);
-              return (
-                <SelectItem key={mode.id} value={mode.id.toString()}>
-                  {mode.mode}
-                </SelectItem>
-              );
-            })
-          )}
-        </SelectContent>
-      </Select>
+      {!isMonitoring && (
+        <Select value={selectedMode} onValueChange={handleModeChange}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Select monitoring mode" />
+          </SelectTrigger>
+          <SelectContent>
+            {monitorModes.length === 0 ? (
+              <SelectItem value="loading" disabled>
+                Loading modes...
+              </SelectItem>
+            ) : (
+              monitorModes.map((mode) => {
+                console.log('Rendering mode:', mode);
+                return (
+                  <SelectItem key={mode.id} value={mode.id.toString()}>
+                    {mode.mode}
+                  </SelectItem>
+                );
+              })
+            )}
+          </SelectContent>
+        </Select>
+      )}
 
-      {shouldShowStartButton() && (
+      {shouldShowStartButton() && !isMonitoring && (
         <Button 
           onClick={handleStartMonitoring} 
           disabled={isLoading}
           className="shrink-0"
         >
           {isLoading ? 'Starting...' : 'Start Monitoring'}
+        </Button>
+      )}
+
+      {isMonitoring && (
+        <Button 
+          onClick={handleStopMonitoring} 
+          disabled={isLoading}
+          variant="destructive"
+          className="shrink-0"
+        >
+          {isLoading ? 'Stopping...' : 'Stop Monitoring'}
         </Button>
       )}
 
