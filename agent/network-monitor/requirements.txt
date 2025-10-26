@@ -1,0 +1,5 @@
+# Network Monitor Requirements
+mitmproxy>=10.0.0
+requests>=2.31.0
+flask>=2.3.0
+colorama>=0.4.6
