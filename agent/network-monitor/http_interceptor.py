@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 logger = logging.getLogger(__name__)
 
 # Configure this to your API endpoint (full URL)
-API_URL = "http://127.0.0.1:3003/network-monitor/events"
+API_URL = "http://127.0.0.1:3003/network-monitor/http/events"
 
 # Max bytes of body to include before truncating (adjust as needed)
 MAX_BODY_BYTES = 100 * 1024  # 100 KB
