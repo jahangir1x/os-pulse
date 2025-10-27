@@ -83,6 +83,30 @@ export function readProcessParameters(ptr: NativePointer): {
 }
 
 /**
+ * Converts byte array to space-separated hex format like 'AB CD 01 29'
+ */
+export function bytesToHex(buffer: NativePointer, size: number): string {
+    try {
+        const byteArray = buffer.readByteArray(size);
+        if (!byteArray) {
+            return "<no data>";
+        }
+        
+        // Convert byte array to hex string with spaces
+        const bytes = new Uint8Array(byteArray);
+        const hexPairs: string[] = [];
+        
+        for (let i = 0; i < bytes.length; i++) {
+            hexPairs.push(bytes[i].toString(16).padStart(2, '0').toUpperCase());
+        }
+        
+        return hexPairs.join(' ');
+    } catch (error) {
+        return "<error reading data>";
+    }
+}
+
+/**
  * Safely reads buffer content as string or hex dump
  */
 export function readBufferContent(buffer: NativePointer, size: number, maxSize: number = 64): {

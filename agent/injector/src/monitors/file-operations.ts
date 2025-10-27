@@ -1,5 +1,5 @@
 import { Logger, FileOperationInfo, HookConfiguration } from '../types';
-import { getFilePath, readBufferContent } from '../utils/windows-api';
+import { getFilePath, bytesToHex } from '../utils/windows-api';
 import { EventSender } from '../messaging';
 
 /**
@@ -69,10 +69,8 @@ export class FileOperationsMonitor {
             let content: string | undefined;
 
             if (interceptorContext.bytesToWrite <= this.config.maxContentLength) {
-                const bufferContent = readBufferContent(interceptorContext.buffer, interceptorContext.bytesToWrite);
-                content = this.config.logBinaryData || !bufferContent.isBinary 
-                    ? bufferContent.content 
-                    : "<binary data>";
+                // Always encode as hex regardless of content type
+                content = bytesToHex(interceptorContext.buffer, interceptorContext.bytesToWrite);
             } else {
                 content = `<data too large: ${interceptorContext.bytesToWrite} bytes>`;
             }
@@ -141,10 +139,8 @@ export class FileOperationsMonitor {
 
             let content: string | undefined;
             if (bytesRead > 0 && bytesRead <= this.config.maxContentLength) {
-                const bufferContent = readBufferContent(interceptorContext.buffer, bytesRead);
-                content = this.config.logBinaryData || !bufferContent.isBinary 
-                    ? bufferContent.content 
-                    : "<binary data>";
+                // Always encode as hex regardless of content type
+                content = bytesToHex(interceptorContext.buffer, bytesRead);
             } else if (bytesRead > this.config.maxContentLength) {
                 content = `<data too large: ${bytesRead} bytes>`;
             }

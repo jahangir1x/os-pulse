@@ -18,8 +18,8 @@ from typing import Optional, Dict, Any, List
 import requests
 
 # Config (change as needed)
-CAPTURE_INTERFACE = os.getenv("CAPTURE_INTERFACE", "\\Device\\NPF_{0C16F9BC-AD3A-4F18-AEAA-55E9A315A4F3}")   # e.g. "eth0" or "any"
-ENDPOINT = os.getenv("ENDPOINT", "http://127.0.0.1:3003/network-monitor/net/events")
+CAPTURE_INTERFACE = os.getenv("CAPTURE_INTERFACE", "\\Device\\NPF_{4EB8A636-4C88-48DB-BEFD-87A5F9D6B9C8}")   # e.g. "eth0" or "any"
+ENDPOINT = os.getenv("ENDPOINT", "http://127.0.0.1:3003/api/net/events")
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "25"))             # send after this many events
 BATCH_INTERVAL = float(os.getenv("BATCH_INTERVAL", "2.0"))  # send at least every N seconds
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "5.0"))

@@ -148,9 +148,28 @@ class MessageHandler:
         
         if data.get('content'):
             content = data['content']
-            if len(content) > 100:
-                content = content[:100] + "..."
-            print(f"{Fore.YELLOW}Content: {repr(content)}")
+            # Check if content is hex-encoded (space-separated hex pairs)
+            if isinstance(content, str) and all(c in '0123456789ABCDEF ' for c in content.upper()):
+                # Display hex content with preview
+                hex_preview = content[:60] if len(content) > 60 else content
+                if len(content) > 60:
+                    hex_preview += "..."
+                print(f"{Fore.YELLOW}Content (hex): {hex_preview}")
+                
+                # Try to convert hex to ASCII for preview
+                try:
+                    hex_bytes = content.replace(' ', '')
+                    if len(hex_bytes) % 2 == 0:
+                        ascii_preview = ''.join(chr(int(hex_bytes[i:i+2], 16)) if 32 <= int(hex_bytes[i:i+2], 16) <= 126 else '.' for i in range(0, min(len(hex_bytes), 40), 2))
+                        if ascii_preview:
+                            print(f"{Fore.YELLOW}ASCII preview: {ascii_preview}")
+                except Exception:
+                    pass
+            else:
+                # Regular content display
+                if len(content) > 100:
+                    content = content[:100] + "..."
+                print(f"{Fore.YELLOW}Content: {repr(content)}")
         
         print(f"{Fore.YELLOW}Time: {data.get('timestamp', 'Unknown')}")
         
