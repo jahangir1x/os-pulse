@@ -2,7 +2,7 @@
     "configurations": [
         {
             "type": "debugpy",
-            "name": "Python Debugger: project with args",
+            "name": "Python frida-controller - Attach to Notepad",
             "request": "launch",
             "program": "controller/main.py",
             "console": "integratedTerminal",
@@ -10,6 +10,18 @@
                 "attach",
                 "--process-name",
                 "notepad.exe"
+            ]
+        },
+        {
+            "type": "debugpy",
+            "name": "Python frida-controller - Attach to Process",
+            "request": "launch",
+            "program": "controller/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "attach",
+                "--pid",
+                "15124"
             ]
         },
         {
