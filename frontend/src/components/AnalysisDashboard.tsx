@@ -18,6 +18,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(0.8); // Start zoomed out to remove scrollbars
+  const [isMonitoring, setIsMonitoring] = useState<boolean>(false);
 
   // Zoom control functions
   const handleZoomIn = () => {
@@ -30,6 +31,18 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
 
   const handleResetZoom = () => {
     setZoomLevel(1.0); // Reset to 100%
+  };
+
+  // Handle monitoring state changes
+  const handleMonitoringStateChange = (monitoring: boolean) => {
+    setIsMonitoring(monitoring);
+    if (!monitoring) {
+      // Clear events and processes when monitoring stops
+      setEvents([]);
+      setProcesses([]);
+      setSelectedEvent(null);
+      setIsLoading(true);
+    }
   };
 
   // Debug: log events when they change
@@ -99,8 +112,12 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
     ));
   }, [events]);
 
-  // Fetch events every 5 seconds and append new ones
+  // Fetch events every 5 seconds and append new ones - only when monitoring is active
   useEffect(() => {
+    if (!isMonitoring) {
+      return; // Don't fetch events if monitoring is not active
+    }
+
     const fetchEvents = async () => {
       try {
         console.log('Fetching events for session:', sessionData.sessionId);
@@ -144,7 +161,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
     const interval = setInterval(fetchEvents, 5000);
 
     return () => clearInterval(interval);
-  }, [sessionData.sessionId]);
+  }, [sessionData.sessionId, isMonitoring]);
 
   return (
     <div className="h-screen flex flex-col p-4 gap-4 bg-background overflow-hidden">
@@ -161,18 +178,27 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
           
           {/* Center - Monitoring controls */}
           <div className="flex-1 flex justify-center px-8">
-            <MonitoringControls sessionData={sessionData} />
+            <MonitoringControls 
+              sessionData={sessionData} 
+              onMonitoringStateChange={handleMonitoringStateChange}
+            />
           </div>
           
           {/* Right - Status indicators */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              {isLoading ? 'Loading...' : `${events.length} events`}
+              <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+              {isMonitoring ? (
+                isLoading ? 'Loading...' : `${events.length} events`
+              ) : (
+                'Ready to monitor'
+              )}
             </div>
-            <div className="text-xs text-muted-foreground">
-              Last update: {lastUpdate.toLocaleTimeString()}
-            </div>
+            {isMonitoring && (
+              <div className="text-xs text-muted-foreground">
+                Last update: {lastUpdate.toLocaleTimeString()}
+              </div>
+            )}
             <ThemeToggle />
           </div>
         </div>
@@ -186,9 +212,9 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
       )}
 
       {/* Main content grid */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+      <div className="flex-1 grid gap-4 min-h-0" style={{ gridTemplateColumns: isMonitoring ? '3fr 1fr' : '1fr' }}>
         {/* Left side - VNC area (top) and Event tables (bottom) */}
-        <div className="col-span-9 flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
           {/* VNC Area with zoom controls */}
           <div className="flex-1">
             <Card className="h-full">
@@ -249,21 +275,25 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
             </Card>
           </div>
 
-          {/* Event Tables */}
-          <div className="h-70">
-            <EventTables events={events} onEventSelect={setSelectedEvent} />
-          </div>
+          {/* Event Tables - only show when monitoring is active */}
+          {isMonitoring && (
+            <div className="h-70">
+              <EventTables events={events} onEventSelect={setSelectedEvent} />
+            </div>
+          )}
         </div>
 
-        {/* Right sidebar - Process list */}
-        <div className="col-span-3">
-          <ProcessList 
-            processes={processes} 
-            selectedEvent={selectedEvent}
-            onEventSelect={setSelectedEvent}
-            onEventDeselect={() => setSelectedEvent(null)}
-          />
-        </div>
+        {/* Right sidebar - Process list - only show when monitoring is active */}
+        {isMonitoring && (
+          <div>
+            <ProcessList 
+              processes={processes} 
+              selectedEvent={selectedEvent}
+              onEventSelect={setSelectedEvent}
+              onEventDeselect={() => setSelectedEvent(null)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

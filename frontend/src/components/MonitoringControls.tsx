@@ -7,9 +7,10 @@ import type { MonitorMode, RunningProcess, SessionData } from '../types/analysis
 
 interface MonitoringControlsProps {
   sessionData: SessionData;
+  onMonitoringStateChange?: (isMonitoring: boolean) => void;
 }
 
-export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
+export function MonitoringControls({ sessionData, onMonitoringStateChange }: MonitoringControlsProps) {
   const [monitorModes, setMonitorModes] = useState<MonitorMode[]>([]);
   const [selectedMode, setSelectedMode] = useState<string>('');
   const [isProcessDialogOpen, setIsProcessDialogOpen] = useState(false);
@@ -134,6 +135,7 @@ export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
       if (response.ok) {
         console.log('Monitoring started successfully');
         setIsMonitoring(true);
+        onMonitoringStateChange?.(true);
         // Optionally show success message
       }
     } catch (error) {
@@ -161,6 +163,7 @@ export function MonitoringControls({ sessionData }: MonitoringControlsProps) {
       if (response.ok) {
         console.log('Monitoring stopped successfully');
         setIsMonitoring(false);
+        onMonitoringStateChange?.(false);
         // Optionally show success message
       }
     } catch (error) {
