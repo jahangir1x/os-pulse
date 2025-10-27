@@ -141,7 +141,7 @@
       "responses": [
         {
           "uuid": "fbd69f73-f43a-4bd1-86cd-8427a9e2929f",
-          "body": "[\n  {\n    \"id\": 1,\n    \"mode\": \"All Processes\"\n  },\n  {\n    \"id\": 2,\n    \"mode\": \"Specific Processes\"\n  },\n  {\n    \"id\": 3,\n    \"mode\": \"Spawn Uploaded\"\n  },\n]",
+          "body": "[\n  {\n    \"id\": 1,\n    \"mode\": \"All Processes\"\n  },\n  {\n    \"id\": 2,\n    \"mode\": \"Specific Processes\"\n  },\n  {\n    \"id\": 3,\n    \"mode\": \"Spawn Uploaded\"\n  }\n]",
           "latency": 0,
           "statusCode": 200,
           "label": "",

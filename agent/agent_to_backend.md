@@ -1,4 +1,4 @@
-/api/events/events
+/api/events/events POST
 {
   "event_type": "file_operation",
   "timestamp": "2025-10-27T07:06:20.870008Z",
@@ -18,7 +18,7 @@
   }
 }
 
-/api/events/events
+/api/events/events POST
 {
   "event_type": "file_operation",
   "timestamp": "2025-10-27T07:11:18.096907Z",
@@ -38,7 +38,29 @@
   }
 }
 
-/api/http/events
+/api/events/events POST
+{
+  "event_type": "process_creation",
+  "timestamp": "2025-10-27T07:44:29.214550Z",
+  "source": "os-pulse-controller",
+  "data": {
+    "processHandle": "0x294",
+    "threadHandle": "0x290",
+    "imagePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "commandLine": "powershell",
+    "currentDirectory": "C:\\Users\\rocky\\",
+    "status": 0,
+    "timestamp": "2025-10-27T07:44:29.188Z",
+    "operation": "NtCreateUserProcess",
+    "metadata": {
+      "sessionId": "mh8u0l5c-966496190834746",
+      "processName": "cmd.exe",
+      "processId": 3012
+    }
+  }
+}
+
+/api/http/events POST
 {
   "timestamp_ms": 1761549204774,
   "kind": "response",
@@ -103,7 +125,7 @@
   }
 }
 
-/api/net/events
+/api/net/events POST
 {
   "events": [
     {
