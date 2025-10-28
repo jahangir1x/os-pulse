@@ -42,6 +42,11 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
       setProcesses([]);
       setSelectedEvent(null);
       setIsLoading(true);
+      // Reset zoom to default when monitoring stops
+      setZoomLevel(0.8);
+    } else {
+      // Set zoom to 40% when monitoring starts
+      setZoomLevel(0.4);
     }
   };
 
