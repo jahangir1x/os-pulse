@@ -107,11 +107,13 @@ func (r *EventRepository) CountAllEvents() (int64, error) {
 }
 
 func (r *EventRepository) CreateHTTPEvent(sessionID string, httpEvent *models.HTTPEvent) error {
-	// Convert HTTP event to JSONB
-	eventData := datatypes.JSON{}
-	if err := eventData.Scan(httpEvent); err != nil {
+	// Convert HTTP event to JSON bytes first
+	jsonBytes, err := datatypes.NewJSONType(httpEvent).MarshalJSON()
+	if err != nil {
 		return fmt.Errorf("failed to marshal HTTP event: %w", err)
 	}
+
+	eventData := datatypes.JSON(jsonBytes)
 
 	event := &models.Event{
 		SessionID: sessionID, // Optional, can be empty
@@ -128,10 +130,13 @@ func (r *EventRepository) CreateHTTPEvent(sessionID string, httpEvent *models.HT
 func (r *EventRepository) CreateNetworkEvents(sessionID string, networkEvent *models.NetworkEvent) error {
 	// Create individual events for each network event
 	for _, netEvent := range networkEvent.Events {
-		eventData := datatypes.JSON{}
-		if err := eventData.Scan(netEvent); err != nil {
+		// Convert network event to JSON bytes first
+		jsonBytes, err := datatypes.NewJSONType(netEvent).MarshalJSON()
+		if err != nil {
 			return fmt.Errorf("failed to marshal network event: %w", err)
 		}
+
+		eventData := datatypes.JSON(jsonBytes)
 
 		event := &models.Event{
 			SessionID: sessionID, // Optional, can be empty
