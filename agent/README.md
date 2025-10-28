@@ -1,8 +1,8 @@
-# OS-Pulse 🔍
+# OS-Pulse Agent System 🔍
 
-**A sophisticated Windows system monitoring framework with real-time API integration**
+**Multi-component agent system for comprehensive Windows monitoring and analysis**
 
-OS-Pulse provides comprehensive monitoring of Windows file operations and process creation activities through dynamic instrumentation using **Frida** and **Python**. Monitor, analyze, and forward system events to external APIs for advanced threat detection and behavioral analysis.
+The OS-Pulse Agent System provides real-time monitoring of Windows systems through multiple specialized components. It integrates with the main OS-Pulse backend to deliver comprehensive system analysis capabilities.
 
 [![Windows](https://img.shields.io/badge/Windows-7%2F10%2F11-blue?logo=windows)](https://www.microsoft.com/windows)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)](https://python.org)
@@ -13,37 +13,39 @@ OS-Pulse provides comprehensive monitoring of Windows file operations and proces
 
 ### 🔍 **Real-Time Monitoring**
 - **File Operations**: ReadFile/WriteFile with content extraction
-- **Process Creation**: NtCreateUserProcess and legacy APIs
-- **API Hooking**: Zero-overhead dynamic instrumentation
+- **Process Creation**: Complete process lifecycle tracking
+- **Network Activity**: HTTP and raw socket monitoring
+- **Registry Operations**: Windows registry access patterns
 - **Live Console Output**: Color-coded event display
 
-### 🌐 **API Integration** ✨ *SIMPLIFIED*
-- **External APIs**: Forward events immediately to SIEM, log aggregation, or analytics platforms
-- **Immediate Processing**: Fire-and-forget event transmission with no buffering/queuing
-- **Simple HTTP**: Uses requests library for reliable synchronous HTTP calls
-- **Background Threads**: Non-blocking event sending via daemon threads
-- **Health Monitoring**: Built-in connection testing and statistics
+### 🌐 **Backend Integration**
+- **REST API**: Seamless integration with Go backend
+- **Event Forwarding**: Real-time event transmission to backend
+- **Session Management**: Coordinated monitoring sessions
+- **File Upload**: Target file processing and analysis
+- **Status Reporting**: Health monitoring and statistics
 
-### 🏗️ **Enterprise-Ready Architecture**
-- **Modular Design**: Clean separation between injector and controller
-- **Type Safety**: Full TypeScript with strict mode
-- **Error Resilience**: Graceful degradation without target process crashes
-- **Performance Optimized**: <1% CPU overhead, configurable memory limits
+### 🏗️ **Multi-Component Architecture**
+- **Controller**: Python-based orchestration and API communication
+- **Injector**: TypeScript/Frida dynamic instrumentation
+- **Network Monitor**: Specialized network traffic analysis
+- **Controller-Go**: Alternative Go-based controller (future)
 
 ## 🏗️ Architecture Overview
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Controller    │    │    Injector     │    │ Target Process  │    │  External API   │
-│   (Python)      │    │ (TypeScript/JS) │    │   (notepad.exe) │    │   (SIEM/Log)    │
+│   Controller    │    │    Injector     │    │ Target Process  │    │   OS-Pulse      │
+│   (Python)      │    │ (TypeScript/JS) │    │   (notepad.exe) │    │   Backend       │
 ├─────────────────┤    ├─────────────────┤    ├─────────────────┤    ├─────────────────┤
 │ • Process Mgmt  │    │ • File Hooks    │    │ • ReadFile()    │    │ • Event Storage │
-│ • Event Display │◄──►│ • Process Hooks │    │ • WriteFile()   │    │ • Threat Intel  │
-│ • HTTP Client   │    │ • Event Sender  │    │ • NtCreateProc()│◄──►│ • Analytics     │
-│ • Immediate Send│    │ • Error Handler │    │ • Hooked APIs   │    │ • Dashboards    │
+│ • Event Display │◄──►│ • Process Hooks │    │ • WriteFile()   │    │ • Session Mgmt  │
+│ • HTTP Client   │    │ • Event Sender  │    │ • NtCreateProc()│◄──►│ • Web Dashboard │
+│ • File Upload   │    │ • Error Handler │    │ • Hooked APIs   │    │ • Analytics     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
-
-Future: controller-go/ will provide a Go-based alternative to the Python controller
+          │                                                                    │
+          └────────────────────── Network Monitor ─────────────────────────────┘
+                              (HTTP/Socket Interception)
 ```
 
 ## 🚀 Quick Start
@@ -53,12 +55,12 @@ Future: controller-go/ will provide a Go-based alternative to the Python control
 - **Python 3.8+** with pip
 - **Node.js 16+** with npm
 - **Administrator privileges** (for system process monitoring)
+- **OS-Pulse Backend** running (for full integration)
 
 ### 1. Installation
 
 ```powershell
-# Clone the repository
-git clone https://github.com/jahangir1x/os-pulse.git
+# Navigate to agent directory
 cd os-pulse/agent
 
 # Setup injector (TypeScript → JavaScript compilation)
@@ -72,13 +74,24 @@ cd controller
 setup.bat  # Creates .pyenv and installs dependencies
 ```
 
-### 2. Basic Usage
+### 2. Backend Integration
 
 ```powershell
 # Activate Python environment
 cd controller
 .\.pyenv\Scripts\activate.bat
 
+# Configure backend connection (default: localhost:3003)
+$env:BACKEND_URL="http://localhost:3003"
+
+# Start agent service (integrates with backend)
+python main.py
+# Agent service starts on http://localhost:7000
+```
+
+### 3. Manual Monitoring (Standalone)
+
+```powershell
 # Spawn a new process with monitoring
 python main.py spawn --executable "C:\Windows\System32\notepad.exe"
 
@@ -86,66 +99,52 @@ python main.py spawn --executable "C:\Windows\System32\notepad.exe"
 python main.py attach --process-name "notepad.exe"
 ```
 
-### 3. API Integration Setup ✨
+### 4. Network Monitoring
 
 ```powershell
-# Configure API integration
-$env:OSPULSE_API_ENABLED="true"
-$env:OSPULSE_API_ENDPOINT="http://your-api-server.com/api/events"
-$env:OSPULSE_API_KEY="your-api-key"
+# Start HTTP interceptor
+cd network-monitor
+python http_interceptor.py
 
-# Start monitoring with API forwarding
-python main.py spawn --executable "C:\Windows\System32\notepad.exe"
-```
-
-### 4. Test API Integration
-
-```powershell
-# Start test API server
-python test_api_server.py
-
-# Run integration tests
-python test_api_integration.py
-
-# Quick test script
-.\test-api.bat
+# Or use batch script
+.\start-http-interceptor.bat
 ```
 
 ## 📁 Project Structure
 
 ```
 agent/
+├── 📂 controller/                  # Python Controller & API Service
+│   ├── main.py                    # Agent service entry point
+│   ├── frida_controller.py        # Frida session management
+│   ├── message_handler.py         # Event processing & backend forwarding
+│   ├── api_client.py              # Backend HTTP client
+│   ├── config.py                  # Configuration management
+│   ├── test_*.py                  # Integration and unit tests
+│   ├── requirements.txt           # Python dependencies
+│   ├── setup.bat                  # Automated environment setup
+│   └── *.bat                      # Convenience scripts
 ├── 📂 injector/                    # Frida TypeScript Agent
 │   ├── 📂 src/
 │   │   ├── 📂 monitors/           # API hook implementations
 │   │   │   ├── file-operations.ts # ReadFile/WriteFile hooks
 │   │   │   └── process-creation.ts# Process creation hooks
 │   │   ├── 📂 messaging/          # Event communication
-│   │   │   └── event-sender.ts    # Frida send() wrapper
 │   │   ├── 📂 logging/            # Structured logging
-│   │   │   └── console-logger.ts  # Color-coded console output
 │   │   ├── 📂 core/               # System orchestration
-│   │   │   └── system-monitor.ts  # Main coordinator
 │   │   └── 📂 utils/              # Windows API utilities
-│   │       └── windows-api.ts     # API helpers and memory ops
 │   ├── _agent.js                  # Compiled Frida script
 │   ├── package.json               # Node.js dependencies
 │   └── tsconfig.json              # TypeScript configuration
-├── 📂 controller/                  # Python Process Controller
-│   ├── main.py                    # CLI entry point with argparse
-│   ├── frida_controller.py        # Frida session management
-│   ├── message_handler.py         # Event processing & display (simplified)
-│   ├── api_client.py              # Async HTTP client for APIs
-│   ├── config.py                  # Configuration management
-│   ├── test_api_integration.py    # API integration tests
-│   ├── test_api_server.py         # Mock API server for testing
-│   ├── requirements.txt           # Python dependencies (includes requests)
-│   ├── setup.bat                  # Automated environment setup
-│   └── API_INTEGRATION.md         # Comprehensive API guide
-├── 📂 controller-go/              # 🚧 Future Go Controller (In Development)
+├── 📂 network-monitor/             # Network Traffic Analysis
+│   ├── http_interceptor.py        # HTTP traffic monitoring
+│   ├── net_interceptor.py         # Raw socket monitoring
+│   ├── requirements.txt           # Python dependencies
+│   └── *.bat                      # Startup scripts
+├── 📂 controller-go/              # 🚧 Alternative Go Controller
 │   ├── main.go                    # CLI entry point
 │   ├── frida_controller.go        # Frida session management
-│   ├── message_handler.go         # Event processing & API forwarding
+│   └── message_handler.go         # Event processing
 │   ├── go.mod                     # Go module dependencies
 │   ├── build.bat                  # Build script
 │   └── README.md                  # Go controller documentation

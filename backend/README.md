@@ -1,51 +1,106 @@
-# OS-Pulse Backend (GORM Version)
+# OS-Pulse Backend 🚀
 
-A Go backend service using Echo framework, GORM ORM, and PostgreSQL for the OS-Pulse monitoring system.
+**Go-based REST API server with Echo framework, GORM ORM, and PostgreSQL for the OS-Pulse monitoring system**
 
-## Features
+A high-performance backend service that provides comprehensive event storage, session management, and real-time communication between the web dashboard and monitoring agents.
 
-- RESTful API for frontend and agent communication
-- GORM ORM with automatic migrations
-- PostgreSQL database with JSONB support for event storage
-- Session management with monitoring time tracking
-- Event processing and forwarding
-- File upload handling
-- Automatic event marking and pagination
+## 🎯 Key Features
+
+### 🌐 **RESTful API**
+- **Frontend Integration**: Complete API for React dashboard
+- **Agent Communication**: Endpoints for Python agent services
+- **Real-time Events**: Live event streaming and processing
+- **File Upload**: Target file processing and storage
+
+### 💾 **Database Management**
+- **GORM ORM**: Type-safe database operations with automatic migrations
+- **PostgreSQL**: Robust relational database with JSONB support
+- **Event Storage**: Efficient storage of monitoring events with indexing
+- **Session Tracking**: Complete monitoring session lifecycle management
+
+### 📊 **Event Processing**
+- **Real-time Ingestion**: High-throughput event processing
+- **Structured Storage**: JSON event data with relational metadata
+- **Pagination**: Efficient large dataset handling
+- **Time-based Queries**: Optimized temporal event filtering
+
+### 🔧 **Agent Integration**
+- **Health Monitoring**: Agent status tracking and reporting
+- **Process Management**: Target process coordination
+- **File Processing**: Uploaded file handling and distribution
+- **Error Handling**: Graceful degradation and recovery
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│   React Frontend    │    │   Go Backend        │    │   PostgreSQL DB     │
+│   (Dashboard)       │    │   (Echo + GORM)     │    │   (Events + Meta)   │
+├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
+│ • Event Display     │    │ • REST API          │    │ • Event Table       │
+│ • Session Control   │◄──►│ • Event Processing  │◄──►│ • Session Table     │
+│ • File Upload       │    │ • Agent Coordination│    │ • Process Table     │
+│ • Real-time UI      │    │ • File Management   │    │ • JSONB Storage     │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+                                      ▲                          ▲
+                                      │                          │
+                           ┌─────────────────────┐              │
+                           │   Agent Service     │              │
+                           │   (Python)          │              │
+                           ├─────────────────────┤              │
+                           │ • Event Generation  │──────────────┘
+                           │ • File Processing   │
+                           │ • Process Monitoring│
+                           │ • Network Analysis  │
+                           └─────────────────────┘
+```
 
 ## Prerequisites
 
-- Go 1.21 or higher
-- PostgreSQL 12 or higher
-- Agent service running on port 7000 (optional for full functionality)
+- **Go 1.21+**: Modern Go version with generics support
+- **PostgreSQL 12+**: Database server with JSONB support
+- **Agent Service**: Python agent running on port 7000 (for full functionality)
 
 ## Setup
 
-1. **Install dependencies:**
-   ```bash
-   go mod tidy
-   ```
+### 1. Install Dependencies
+```bash
+go mod tidy
+```
 
-2. **Set up PostgreSQL:**
-   ```bash
-   # Create database
-   createdb ospulse
-   
-   # Or using psql
-   psql -c "CREATE DATABASE ospulse;"
-   ```
+### 2. Database Setup
+```bash
+# Using Docker (recommended)
+docker-compose up -d postgres
 
-3. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your database credentials
-   ```
+# Or manual PostgreSQL setup
+createdb ospulse
 
-4. **Run the application:**
-   ```bash
-   go run main.go
-   ```
+# Using psql
+psql -c "CREATE DATABASE ospulse;"
+```
 
-The server will start on port 3003 by default and automatically run GORM migrations.
+### 3. Environment Configuration
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit database credentials
+DATABASE_URL=postgres://username:password@localhost:5432/ospulse
+AGENT_URL=http://localhost:7000
+```
+
+### 4. Run Application
+```bash
+# Development mode
+go run main.go
+
+# Production build
+go build -o ospulse-backend main.go
+./ospulse-backend
+```
+
+The server starts on **port 3003** and automatically runs GORM migrations.
 
 ## GORM Models
 

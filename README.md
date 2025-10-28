@@ -1,207 +1,338 @@
 # OS-Pulse
 
-**A sophisticated cross-platform system monitoring monorepo for real-time process and file operation analysis.**
+**A comprehensive real-time system monitoring platform with web-based dashboard for security research and behavior analysis.**
 
-OS-Pulse is a comprehensive system monitoring solution designed for security research, system analysis, and behavior tracking. It provides real-time monitoring capabilities across different platforms with a focus on Windows API instrumentation and native system utilities.
+OS-Pulse is a modern, full-stack system monitoring solution that combines real-time Windows API instrumentation, network monitoring, and an intuitive web dashboard. Built for security researchers, malware analysts, and system administrators who need deep insights into system behavior.
 
 ## 🚀 Features
 
-- **Real-time Windows API Monitoring**: Track file operations, process creation, and system calls
-- **Dynamic Instrumentation**: Built with Frida framework for runtime process injection
-- **Cross-platform Utilities**: Native C++ utilities for system operations
-- **TypeScript Development**: Modern, type-safe codebase with enterprise-ready architecture
-- **Modular Design**: Clean separation of concerns with plugin-style monitors
+- **Real-time System Monitoring**: Track file operations, process creation, network activity, and system calls
+- **Web-based Dashboard**: Modern React frontend with real-time event visualization
+- **Dynamic Instrumentation**: Frida-based runtime process injection with TypeScript agents
+- **Network Traffic Analysis**: HTTP and raw network packet interception
+- **Multi-Agent Architecture**: Modular design with specialized monitoring components
+- **GORM Database**: PostgreSQL backend with automatic migrations and JSONB support
+- **Session Management**: File upload, monitoring control, and event tracking per session
 - **Performance Optimized**: Low-overhead monitoring with configurable data extraction limits
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │    Backend      │    │     Agents      │
+│   (React)       │◄──►│   (Go/GORM)    │◄──►│   (Multiple)    │
+│                 │    │                 │    │                 │
+│ • Dashboard     │    │ • REST API      │    │ • Frida Agent   │
+│ • Controls      │    │ • Session Mgmt  │    │ • HTTP Monitor  │
+│ • Event Tables  │    │ • Event Storage │    │ • Net Monitor   │
+│ • Process List  │    │ • PostgreSQL    │    │ • File Monitor  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
 
 ## 📁 Project Structure
 
 ```
 os-pulse/
-├── agent/                    # Frida-based Windows API monitoring agent
-│   ├── src/                  # TypeScript source code
-│   │   ├── core/             # Core system monitoring logic
-│   │   ├── monitors/         # API hook implementations
-│   │   ├── logging/          # Structured logging system
-│   │   ├── utils/            # Windows API utilities
-│   │   └── types/            # TypeScript interfaces
-│   ├── _agent.js             # Compiled Frida agent
-│   └── run-frida.ps1         # PowerShell execution script
-└── utils/                    # Native C++ system utilities
-    ├── build/                # Compiled binaries
-    ├── command_exec.cpp      # Command execution utilities
-    ├── file_read.cpp         # File reading operations
-    ├── file_write.cpp        # File writing operations
-    └── Procmon.exe           # Process Monitor tool
+├── frontend/                 # React web dashboard
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   ├── types/           # TypeScript types
+│   │   └── lib/             # Utilities
+│   ├── noVNC/               # VNC viewer integration
+│   └── package.json
+├── backend/                  # Go backend with GORM
+│   ├── internal/
+│   │   ├── models/          # GORM models
+│   │   ├── handlers/        # HTTP handlers
+│   │   ├── repository/      # Data access layer
+│   │   ├── service/         # Business logic
+│   │   └── database/        # GORM setup
+│   └── main.go
+├── agent/                    # Monitoring agents
+│   ├── controller/          # Python controller
+│   ├── injector/            # Frida TypeScript agent
+│   ├── network-monitor/     # Network monitoring
+│   └── controller-go/       # Go controller (alternative)
+└── utils/                   # Native utilities
+    └── build/               # C++ compiled tools
 ```
 
 ## 🛠 Components
 
-### Agent (Frida-based Monitoring)
+### Frontend (React Dashboard)
 
-The **agent** directory contains a sophisticated Windows system monitoring tool built with Frida and TypeScript. It performs real-time monitoring of Windows API calls to track:
+Modern web dashboard built with React, TypeScript, and Tailwind CSS:
 
+- **Real-time Event Visualization**: Live tables showing file operations, network activity
+- **Process Monitoring**: Interactive process list with detailed information
+- **VNC Integration**: Embedded virtual machine display with zoom controls
+- **Session Management**: File upload, monitoring controls, and session tracking
+- **Responsive Design**: Works on desktop and mobile devices
+
+### Backend (Go + GORM)
+
+High-performance REST API server with PostgreSQL database:
+
+- **GORM ORM**: Automatic migrations, relationships, and query optimization
+- **Session Management**: Track monitoring sessions with time-based event filtering
+- **Event Processing**: Store and serve events with pagination and marking
+- **Agent Integration**: Forward requests to monitoring agents
+- **PostgreSQL**: JSONB support for flexible event data storage
+
+### Agent System (Multi-Component)
+
+Modular monitoring system with specialized agents:
+
+#### Controller (Python/Go)
+- **Session Coordination**: Manage monitoring lifecycle
+- **Agent Orchestration**: Control multiple monitoring components
+- **API Integration**: Communicate with backend services
+
+#### Injector (Frida + TypeScript)
+- **Dynamic Instrumentation**: Runtime API hooking without process restart
 - **File Operations**: ReadFile/WriteFile with content extraction
-- **Process Creation**: NtCreateUserProcess, NtCreateProcess, NtCreateProcessEx
-- **System Behavior**: Runtime analysis with configurable monitoring depth
+- **Process Creation**: NtCreateUserProcess, NtCreateProcess monitoring
+- **Configurable Monitoring**: Adjustable content limits and hook depth
 
-**Key Features:**
-- Dynamic instrumentation without process restart
-- Configurable content extraction limits
-- Binary data handling with hex logging
-- Handle-to-path resolution
-- Parent-child process relationship tracking
-
+#### Network Monitor (Python)
+- **HTTP Interception**: Capture and analyze HTTP/HTTPS traffic
+- **Raw Packet Analysis**: Low-level network packet inspection
 ### Utils (Native Utilities)
 
-The **utils** directory provides native C++ utilities for direct system operations and includes Process Monitor (Procmon) for advanced system monitoring.
+C++ utilities for direct system operations and advanced monitoring tools:
+
+- **Command Execution**: Execute system commands and capture output
+- **File Operations**: Low-level file read/write operations
+- **Process Monitor**: Advanced system monitoring capabilities
 
 ## 🔧 Prerequisites
 
-### For Agent Development
-- **Python 3.8+** with pip
-- **Node.js 16+** with npm
-- **PowerShell** (Windows)
-- **Administrator privileges** (for system process monitoring)
+### Full Stack Development
+- **Node.js 18+** with npm/yarn (Frontend)
+- **Go 1.21+** (Backend)
+- **PostgreSQL 12+** (Database)
+- **Python 3.8+** with pip (Agents)
+- **Administrator privileges** (Windows monitoring)
 
-### For Utils Development
-- **Visual Studio 2019+** or compatible C++ compiler
-- **Windows SDK**
+### Development Tools
+- **Visual Studio Code** (recommended)
+- **Git** for version control
+- **Docker** (optional, for PostgreSQL)
 
 ## 🚀 Quick Start
 
-### Agent Setup
+### 1. Database Setup
+```bash
+# Using Docker (recommended)
+cd backend
+docker-compose up -d postgres
 
-1. **Clone the repository:**
-   ```powershell
-   git clone https://github.com/jahangir1x/os-pulse.git
-   cd os-pulse/agent
-   ```
-
-2. **Set up Python environment:**
-   ```powershell
-   python -m venv .pyenv
-   .\.pyenv\Scripts\Activate.ps1
-   pip install -r requirements.txt
-   ```
-
-3. **Install Node.js dependencies:**
-   ```powershell
-   npm install
-   ```
-
-4. **Build the agent:**
-   ```powershell
-   npm run build
-   ```
-
-5. **Run monitoring:**
-   ```powershell
-   # Attach to existing process
-   .\run-frida.ps1 -Target "notepad.exe"
-   
-   # Or spawn new process
-   frida -f "C:\Windows\System32\notepad.exe" -l _agent.js
-   ```
-
-### Utils Setup
-
-1. **Navigate to utils directory:**
-   ```powershell
-   cd os-pulse/utils
-   ```
-
-2. **Compile utilities:**
-   ```powershell
-   # Example compilation (adjust for your compiler)
-   g++ -o build/command_exec.exe command_exec.cpp
-   g++ -o build/file_read.exe file_read.cpp
-   g++ -o build/file_write.exe file_write.cpp
-   ```
-
-## 📊 Usage Examples
-
-### Real-time File Operation Monitoring
-```powershell
-# Monitor file operations in notepad
-.\run-frida.ps1 -Target "notepad.exe"
-# Open, edit, and save files to see detailed operation logs
+# Or install PostgreSQL manually and create database
+createdb ospulse
 ```
 
-### Process Creation Tracking
-```powershell
-# Monitor process creation in explorer
-.\run-frida.ps1 -Target "explorer.exe"
-# Launch applications to see process creation details
+### 2. Backend Setup
+```bash
+cd backend
+go mod tidy
+go run main.go
+# Server starts on http://localhost:3003
 ```
 
-### Configuration Options
-The agent supports runtime configuration for different monitoring scenarios:
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+# Dashboard available at http://localhost:5173
+```
 
-- **Low overhead**: `maxContentLength: 64, logBinaryData: false`
-- **Full analysis**: `maxContentLength: 4096, logBinaryData: true`
-- **Selective monitoring**: Enable/disable specific monitor types
+### 4. Agent Setup
+```bash
+cd agent/controller
+pip install -r requirements.txt
+python main.py
+# Agent service starts on http://localhost:7000
+```
 
-## 🏗 Architecture
+### 5. Access Dashboard
+- Open browser to `http://localhost:5173`
+- Upload a file to create a monitoring session
+- Start monitoring and interact with the target system
+- View real-time events in the dashboard
 
-### Agent Architecture
-- **Dependency Injection**: Clean separation with injected dependencies
-- **Strategy Pattern**: Pluggable monitor implementations
-- **Observer Pattern**: Frida interceptors for API observation
-- **Factory Pattern**: Centralized component orchestration
-- **SOLID Principles**: Maintainable, extensible design
+## 📊 Usage Workflow
+
+### 1. Session Creation
+```bash
+# Upload target file through web interface
+# System creates unique session ID
+# File is forwarded to agent service
+```
+
+### 2. Start Monitoring
+```bash
+# Select monitoring mode:
+# - All Processes: Monitor entire system
+# - Specific Processes: Choose target processes
+# - Spawn Uploaded: Execute uploaded file
+```
+
+### 3. Real-time Analysis
+```bash
+# View live events in dashboard:
+# - File operations (read/write)
+# - Process creation/termination
+# - Network activity (HTTP/raw)
+# - System calls and API interactions
+```
+
+### 4. Data Export
+```bash
+# Events stored in PostgreSQL
+# JSON format for easy analysis
+# Time-based filtering and pagination
+```
+
+## 🏗 System Architecture
+
+### Data Flow
+```
+User → Frontend → Backend → Database
+             ↓         ↑
+           Agent ← Controller
+             ↓
+        Target System
+```
 
 ### Technology Stack
-- **Frida 17.2.17**: Dynamic instrumentation framework
-- **TypeScript**: Type-safe development with ES2022 features
-- **Node.js**: Build toolchain and dependency management
-- **Python**: Frida runtime and CLI tools
-- **C++**: Native system utilities
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
+- **Backend**: Go, Echo framework, GORM ORM
+- **Database**: PostgreSQL with JSONB support
+- **Agents**: Python, Frida, TypeScript
+- **Monitoring**: Windows API hooks, Network interception
+## 🛠 Development Guidelines
+
+### Code Organization
+- **Modular Architecture**: Each component is independently testable and deployable
+- **Type Safety**: Full TypeScript typing for frontend, strict Go typing for backend
+- **Error Handling**: Graceful failure modes and recovery across all layers
+- **Configuration**: Environment-based configuration for all services
+
+### Development Workflow
+```bash
+# Backend development
+cd backend
+go run main.go          # Start with hot-reload
+go test ./...           # Run all tests
+
+# Frontend development  
+cd frontend
+npm run dev             # Start with hot-reload
+npm run build           # Production build
+
+# Agent development
+cd agent/controller
+python main.py          # Start agent service
+python -m pytest       # Run test suite
+```
+
+### Testing Strategy
+```bash
+# Unit tests
+npm test                # Frontend
+go test ./...           # Backend
+python -m pytest       # Agent
+
+# Integration tests
+npm run test:e2e        # End-to-end
+python test_api_integration.py  # API tests
+```
+
+### Performance Considerations
+- **Memory Management**: Bounded buffer sizes prevent memory leaks
+- **Database Optimization**: GORM with proper indexing and connection pooling
+- **Real-time Updates**: Efficient WebSocket communication
+- **CPU Overhead**: Selective monitoring reduces system impact
 
 ## 🔍 Monitoring Capabilities
 
-### Windows API Coverage
-- **kernel32.dll**: File operations (ReadFile, WriteFile)
-- **ntdll.dll**: Process creation APIs
-- **Handle Resolution**: Automatic file path resolution
-- **Memory Safety**: Protected memory access with error handling
+### File System Operations
+- Read/Write operations with content preview
+- File creation, deletion, and metadata changes
+- Handle-to-path resolution for system files
+- Directory enumeration tracking
 
-### Data Extraction
-- **Content Analysis**: Configurable content extraction from file operations
-- **Binary Data**: Optional hex logging for binary content
-- **Process Parameters**: Command line and environment capture
-- **Relationship Tracking**: Parent-child process relationships
+### Process Management
+- Process creation with full command line arguments
+- Parent-child relationship mapping
+- Process termination and exit codes
+- Module loading and DLL injection detection
 
-## 🚧 Development
+### Network Activity
+- HTTP request/response interception
+- Raw socket communication monitoring
+- SSL/TLS handshake analysis
+- Protocol-specific parsing (HTTP, FTP, etc.)
 
-### Development Workflow
-```powershell
-# Watch mode for continuous compilation
-npm run watch
+### Registry Operations
+- Registry key creation, modification, deletion
+- Value read/write operations
+- Registry tree traversal patterns
+- Security descriptor changes
 
-# Quick testing
-.\run-frida.ps1
+## � API Documentation
 
-# VS Code integration available
+### Backend Endpoints
+```bash
+GET    /api/events              # List events with pagination
+POST   /api/events              # Create new event
+GET    /api/events/:id          # Get specific event
+GET    /api/sessions            # List sessions
+POST   /api/sessions            # Create session
+GET    /api/processes           # List processes
+POST   /api/files               # Upload file
 ```
 
-### Adding New Monitors
-1. Create monitor class in `src/monitors/`
-2. Implement required interfaces
-3. Add Frida interceptors
-4. Export from `src/monitors/index.ts`
-5. Initialize in `SystemMonitor`
+### Agent API
+```bash
+POST   /start                   # Start monitoring
+POST   /stop                    # Stop monitoring
+GET    /status                  # Get monitoring status
+POST   /upload                  # Upload target file
+```
 
-### Testing
-- **VS Code Integration**: Debug configurations and tasks
-- **Manual Testing**: Multiple target processes supported
-- **Error Resilience**: Graceful degradation on failures
+### Event Format
+```json
+{
+  "id": "uuid",
+  "session_id": "uuid", 
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "event_type": "file_operation",
+  "process_id": 1234,
+  "process_name": "notepad.exe",
+  "details": {
+    "operation": "CreateFile",
+    "path": "C:\\document.txt",
+    "access_mode": "READ_WRITE"
+  }
+}
+```
 
-## 📈 Performance Considerations
+## 🚧 Current Limitations
 
-- **Memory Efficient**: Configurable content limits prevent exhaustion
-- **CPU Optimized**: Minimal overhead in critical paths
-- **Selective Monitoring**: Disable unused features
-- **Non-blocking I/O**: Asynchronous logging operations
+- **Windows Only**: Currently supports Windows systems exclusively
+- **Privilege Requirements**: Requires administrator rights for system monitoring
+- **Performance Impact**: High-frequency monitoring may affect system performance
+- **Single Machine**: Designed for single-machine monitoring
+
+## 🔮 Future Enhancements
+
+- **Cross-platform Support**: Linux and macOS compatibility
+- **Machine Learning**: Anomaly detection in behavioral patterns
+- **Distributed Monitoring**: Multi-system coordination
+- **Advanced Analytics**: Statistical analysis and reporting tools
+- **Real-time Alerts**: Configurable alerting system
 
 ## 🔒 Security & Privacy
 
@@ -211,6 +342,10 @@ npm run watch
 - Requires code injection capabilities and elevated privileges
 - Use responsibly and in compliance with applicable laws and policies
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -219,19 +354,14 @@ npm run watch
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## 🆘 Support
 
-This project is proprietary. See the license file for details.
+For support and questions:
 
-## 🔗 Related Projects
-
-- [Frida](https://frida.re/) - Dynamic instrumentation framework
-- [Process Monitor](https://docs.microsoft.com/en-us/sysinternals/downloads/procmon) - Advanced monitoring for Windows
-
-## 📞 Support
-
-For issues, questions, or contributions, please open an issue on the GitHub repository.
+- **Issues**: [GitHub Issues](https://github.com/jahangir1x/os-pulse/issues)
+- **Documentation**: Check component-specific README files in each directory
+- **Architecture**: Refer to individual component READMEs for detailed documentation
 
 ---
 
-**OS-Pulse** - Real-time system monitoring for security research and system analysis.
+**Note**: This tool is designed for legitimate security research, system administration, and debugging purposes. Users are responsible for complying with applicable laws and regulations in their jurisdiction.

@@ -1,10 +1,16 @@
 # OS-Pulse Controller 🎛️
 
-**Python-based process management and API integration hub for the OS-Pulse monitoring system**
+**Python-based agent service and process management hub for the OS-Pulse monitoring system**
 
-The controller serves as the orchestration layer that manages Frida injection, processes monitoring events in real-time, and forwards data to external APIs for advanced analysis and threat detection.
+The controller serves as the main agent service that coordinates Frida injection, processes monitoring events in real-time, and communicates with the OS-Pulse backend for comprehensive system analysis.
 
 ## 🎯 Core Capabilities
+
+### 🌐 **Agent Service**
+- **REST API**: HTTP service on port 7000 for backend communication
+- **File Upload**: Accept and process uploaded target files
+- **Session Management**: Coordinate monitoring sessions with backend
+- **Status Reporting**: Real-time monitoring status and health checks
 
 ### 🔧 **Process Management**
 - **Spawn Mode**: Launch new processes under monitoring
@@ -13,38 +19,38 @@ The controller serves as the orchestration layer that manages Frida injection, p
 - **Session Management**: Robust Frida session handling with cleanup
 
 ### 📊 **Event Processing**
-- **Real-Time Display**: Color-coded console output with timestamps
+- **Real-Time Processing**: Immediate event forwarding to backend
 - **Event Statistics**: Track file operations and process creations
 - **Structured Logging**: Configurable log levels and formatting
+- **Backend Integration**: Seamless communication with Go backend
 
-### 🌐 **API Integration** ✨ *SIMPLIFIED*
-- **Simple HTTP Client**: Immediate event transmission using requests library
-- **Fire-and-Forget**: No buffering or queuing - events sent immediately
-- **Background Threads**: Non-blocking event sending via daemon threads
-- **Error Resilience**: Graceful handling of connection failures
-- **Multiple Destinations**: Support for SIEM, log aggregation, and analytics platforms
+### 🔍 **Backend Integration**
+- **Event Forwarding**: Real-time event transmission to PostgreSQL backend
+- **Session Coordination**: Synchronized monitoring sessions
+- **Process Information**: Target process details and metadata
+- **Health Monitoring**: Connection status and error handling
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
-│     Controller      │    │     Injector        │    │   External APIs     │
-│     (Python)        │    │   (Frida Agent)     │    │ (SIEM/Analytics)    │
+│     Controller      │    │     Injector        │    │   OS-Pulse Backend  │
+│  (Python Service)   │    │   (Frida Agent)     │    │  (Go + PostgreSQL)  │
 ├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
-│ • FridaController   │    │ • File Monitors     │    │ • Elasticsearch     │
-│ • MessageHandler    │◄──►│ • Process Monitors  │    │ • Splunk            │
-│ • ApiClient         │    │ • EventSender       │    │ • Custom Analytics  │
-│ • ConfigManager     │    │ • Frida send()      │    │ • Threat Intel      │
-│ • CLI Interface     │    │                     │    │ • Dashboards        │
+│ • HTTP Service      │    │ • File Monitors     │    │ • Event Storage     │
+│ • FridaController   │◄──►│ • Process Monitors  │    │ • Session Mgmt      │
+│ • MessageHandler    │    │ • EventSender       │    │ • Web Dashboard     │
+│ • BackendClient     │    │ • Frida send()      │    │ • REST API          │
+│ • File Processing   │    │                     │    │ • Real-time UI      │
 └─────────────────────┘    └─────────────────────┘    └─────────────────────┘
           │                                                        ▲
           ▼                                                        │
 ┌─────────────────────┐                              ┌─────────────────────┐
-│   Target Process    │                              │    API Events       │
+│   Target Process    │                              │    Event Stream     │
 │   (notepad.exe)     │                              │                     │
 │ • ReadFile calls    │                              │ • File Operations   │
 │ • WriteFile calls   │──────────────────────────────┤ • Process Creation  │
-│ • Process creation  │                              │ • Metadata          │
+│ • Process creation  │                              │ • Network Activity  │
 └─────────────────────┘                              └─────────────────────┘
 ```
 

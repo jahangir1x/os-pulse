@@ -1,20 +1,21 @@
 # OS-Pulse Injector 🔬
 
-**TypeScript-based Frida agent for real-time Windows API monitoring**
+**TypeScript-based Frida agent for real-time Windows API monitoring and event capture**
 
-The injector is a sophisticated Frida agent that performs dynamic instrumentation of Windows API calls, providing comprehensive monitoring of file operations and process creation activities with minimal performance overhead and enterprise-grade reliability.
+The injector is a sophisticated Frida agent that performs dynamic instrumentation of Windows API calls, providing comprehensive monitoring of file operations, process creation, and system activities with seamless integration to the OS-Pulse backend system.
 
 ## 🎯 Core Capabilities
 
 ### 🪝 **Dynamic API Hooking**
 - **File Operations**: ReadFile/WriteFile with intelligent content extraction
 - **Process Creation**: NtCreateUserProcess and legacy process creation APIs
+- **Registry Operations**: Windows registry access monitoring
 - **Zero-Overhead Hooking**: Sub-microsecond API call interception
 - **Memory Safety**: Robust pointer validation and error handling
 
 ### 📊 **Real-Time Event Streaming**
 - **Structured Events**: JSON-formatted event data with rich metadata
-- **Bidirectional Communication**: Command/response patterns with controller
+- **Backend Integration**: Direct communication with controller service
 - **Performance Optimized**: Configurable content limits and binary handling
 - **Error Resilience**: Graceful degradation without target process crashes
 
@@ -22,7 +23,7 @@ The injector is a sophisticated Frida agent that performs dynamic instrumentatio
 - **TypeScript**: Full type safety with ES2022 features and strict mode
 - **Modular Design**: Clean separation of concerns with dependency injection
 - **Extensible Framework**: Easy addition of new monitoring capabilities
-- **VS Code Integration**: Debug configurations and development tasks
+- **Backend Communication**: Seamless event forwarding to OS-Pulse system
 
 ## 🏗️ Architecture Overview
 
@@ -36,6 +37,10 @@ Target Process (notepad.exe)
 │   ├── NtCreateUserProcess() │
 │   ├── NtCreateProcess()     │
 │   └── NtCreateProcessEx()   │
+├── 📊 Registry Operations ────┤
+│   ├── RegOpenKey()          │
+│   ├── RegSetValue()         │
+│   └── RegQueryValue()       │
 └── 🧠 Memory Operations ──────┤
     ├── Pointer Validation    │
     ├── String Extraction     │
@@ -48,6 +53,33 @@ Target Process (notepad.exe)
               ├─────────────────────────┤
               │ 🔍 SystemMonitor        │
               │   ├── FileOperations    │
+              │   ├── ProcessCreation   │
+              │   └── RegistryOps       │
+              │ 📤 EventSender          │
+              │   └── Controller Comm   │
+              │ 🛡️ ErrorHandler         │
+              │   └── Safety Checks     │
+              └─────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────┐
+              │    Controller Service   │
+              │    (Python HTTP API)    │
+              ├─────────────────────────┤
+              │ 📨 Event Processing     │
+              │ 🔄 Backend Integration  │
+              │ 📊 Real-time Forwarding │
+              └─────────────────────────┘
+                              │
+                              ▼
+              ┌─────────────────────────┐
+              │   OS-Pulse Backend      │
+              │   (Go + PostgreSQL)     │
+              ├─────────────────────────┤
+              │ 💾 Event Storage        │
+              │ 🌐 Web Dashboard        │
+              │ 📈 Analytics Engine     │
+              └─────────────────────────┘
               │   ├── ProcessCreation   │
               │   ├── EventSender       │
               │   └── ConsoleLogger     │

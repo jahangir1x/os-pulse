@@ -1,45 +1,53 @@
-# OS-Pulse Frontend 🔍
+# OS-Pulse Frontend �️
 
-**Real-time Windows System Monitoring Dashboard**
+**React-based real-time system monitoring dashboard for the OS-Pulse platform**
 
-A sophisticated React-based frontend for the OS-Pulse Windows system monitoring framework. This dashboard provides real-time visualization of file operations, process creation, and API events with comprehensive malware analysis capabilities.
+A modern, responsive web dashboard that provides comprehensive visualization and control for Windows system monitoring. Built with React 18, TypeScript, and Tailwind CSS to deliver real-time insights into system activities.
 
-[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://reactjs.org)
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-7.1-purple?logo=vite)](https://vitejs.dev)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.1-blue?logo=tailwindcss)](https://tailwindcss.com)
+[![Vite](https://img.shields.io/badge/Vite-6.1-purple?logo=vite)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-blue?logo=tailwindcss)](https://tailwindcss.com)
 
-## 🎯 Features
+## 🎯 Key Features
 
 ### 🖥️ **Real-Time Dashboard**
-- **VNC Integration**: Live view of monitored virtual environments via noVNC
-- **Process Monitoring**: Real-time process list with PID tracking
-- **Event Analysis**: Tabbed interface for HTTP, connections, and file operations
-- **Live Updates**: WebSocket integration for real-time event streaming
+- **Live Event Display**: Real-time event tables with automatic updates
+- **Process Monitoring**: Active process list with detailed information
+- **Session Management**: Create and manage monitoring sessions
+- **Status Monitoring**: Real-time agent and system status indicators
 
 ### 📊 **Analysis Capabilities**
 - **File Operations**: ReadFile/WriteFile monitoring with content extraction
-- **Network Activity**: HTTP requests and raw connection tracking
-- **Process Creation**: NtCreateUserProcess and legacy API monitoring
-- **Behavioral Analysis**: Process relationship tracking and timeline visualization
+- **Process Events**: Process creation, termination, and lifecycle tracking
+- **Session Analytics**: Comprehensive session-based event analysis
+- **Export Functions**: Data export and reporting capabilities
+
+### 🔧 **Monitoring Controls**
+- **Start/Stop Monitoring**: Full control over monitoring activities
+- **File Upload**: Target file processing and analysis
+- **Conditional Event Fetching**: Optimized data loading based on monitoring state
+- **Automatic UI Adjustments**: Smart zoom and layout management
 
 ### 🏗️ **Modern Architecture**
-- **React 19**: Latest React with TypeScript for type safety
+- **React 18**: Modern React with hooks and concurrent features
+- **TypeScript**: Full type safety throughout the application
 - **Shadcn/UI**: Accessible component library with Radix UI primitives
 - **Tailwind CSS**: Utility-first styling with responsive design
-- **Vite**: Fast development and optimized builds
+- **Vite**: Fast development server and optimized production builds
 
 ## 🏗️ Architecture Overview
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend API   │    │  OS-Pulse Agent │
-│   (React/TS)    │    │   (Node.js)     │    │ (Frida/Python)  │
+│   Frontend      │    │   Go Backend    │    │  Agent Service  │
+│   (React/TS)    │    │   (Echo/GORM)   │    │ (Python/Frida)  │
 ├─────────────────┤    ├─────────────────┤    ├─────────────────┤
-│ • Dashboard     │    │ • Session Mgmt  │    │ • API Hooking   │
-│ • VNC Viewer    │◄──►│ • Event Storage │◄──►│ • File Monitor  │
-│ • Event Tables  │    │ • WebSocket     │    │ • Process Track │
-│ • Process List  │    │ • File Upload   │    │ • Event Stream  │
+│ • Dashboard     │    │ • REST API      │    │ • File Monitor  │
+│ • Event Tables  │◄──►│ • Event Storage │◄──►│ • Process Track │
+│ • Session Mgmt  │    │ • Session Mgmt  │    │ • Network Mon   │
+│ • File Upload   │    │ • Agent Coord   │    │ • Event Stream  │
+│ • Monitoring UI │    │ • PostgreSQL    │    │ • HTTP Service  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -47,7 +55,26 @@ A sophisticated React-based frontend for the OS-Pulse Windows system monitoring 
 
 ### Prerequisites
 - **Node.js 18+** with npm
-- **Backend API** running on port 3003
+- **Go Backend** running on port 3003
+- **Agent Service** running on port 7000 (for full functionality)
+
+### 1. Installation
+```bash
+cd frontend
+npm install
+```
+
+### 2. Development Server
+```bash
+npm run dev
+# Dashboard available at http://localhost:5173
+```
+
+### 3. Production Build
+```bash
+npm run build
+npm run preview
+```
 - **OS-Pulse Agent** for data collection
 
 ### Development Setup

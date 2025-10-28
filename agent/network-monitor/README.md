@@ -1,53 +1,95 @@
-# Network Monitor - mitmproxy HTTP/HTTPS Interceptor
+# OS-Pulse Network Monitor 🌐
 
-This module provides HTTP/HTTPS traffic interception using mitmproxy and forwards events to the OS-Pulse API.
+**Network traffic interception and analysis component for the OS-Pulse monitoring system**
+
+The Network Monitor provides comprehensive HTTP/HTTPS traffic interception and analysis capabilities, integrating seamlessly with the OS-Pulse backend to deliver complete network visibility for monitored systems.
+
+## 🎯 Core Capabilities
+
+### 🕸️ **Traffic Interception**
+- **HTTP/HTTPS Monitoring**: Complete request/response capture using mitmproxy
+- **SSL/TLS Analysis**: Certificate inspection and encrypted traffic analysis
+- **Real-time Processing**: Live traffic monitoring with immediate event forwarding
+- **Protocol Support**: HTTP/1.1, HTTP/2, and WebSocket traffic analysis
+
+### 📊 **Event Processing**
+- **Structured Events**: JSON-formatted network events with rich metadata
+- **Backend Integration**: Direct communication with OS-Pulse backend
+- **Request/Response Capture**: Complete HTTP transaction recording
+- **Content Analysis**: Payload inspection and categorization
+
+### 🔍 **Advanced Analysis**
+- **DNS Resolution**: Domain name resolution tracking
+- **Connection Analysis**: TCP connection lifecycle monitoring
+- **Performance Metrics**: Latency and throughput measurements
+- **Security Detection**: Suspicious traffic pattern identification
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│   Target System     │    │  Network Monitor    │    │  OS-Pulse Backend   │
+│   (Applications)    │    │   (mitmproxy)       │    │  (Go + PostgreSQL)  │
+├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
+│ • Web Browsers      │    │ • HTTP Interceptor  │    │ • Event Storage     │
+│ • HTTP Clients      │◄──►│ • SSL/TLS Handler   │◄──►│ • Network Analysis  │
+│ • API Calls         │    │ • Event Processor   │    │ • Web Dashboard     │
+│ • Background Apps   │    │ • Backend Client    │    │ • Real-time UI      │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+```
 
 ## Requirements
 
 ```bash
-pip install mitmproxy requests flask colorama
+pip install -r requirements.txt
+# Installs: mitmproxy, requests, flask, colorama
 ```
 
 ## Setup and Usage
 
-### 1. Start the Test API Server
+### 1. Backend Integration
 
-First, start the test server to receive intercepted events:
-
-```bash
-cd network-monitor
-python test_http_server.py
-```
-
-This will start a Flask server on `http://127.0.0.1:3003` that will receive and display intercepted HTTP/HTTPS traffic.
-
-### 2. Run mitmproxy with the Interceptor
-
-In a new terminal, run mitmproxy with the HTTP interceptor addon:
+Ensure the OS-Pulse backend is running:
 
 ```bash
-# Basic interception (HTTP only)
-mitmdump -s http_interceptor.py
-
-# With HTTPS interception (will require certificate installation)
-mitmdump -s http_interceptor.py --set confdir=~/.mitmproxy
-
-# Listen on specific port
-mitmdump -s http_interceptor.py -p 8080
-
-# Verbose logging
-mitmdump -s http_interceptor.py -v
+# Backend should be running on http://localhost:3003
+cd ../../backend
+go run main.go
 ```
 
-### 3. Configure Applications to Use the Proxy
+### 2. Start Network Monitor
 
-Configure your applications or system to use the mitmproxy as an HTTP proxy:
+```bash
+cd agent/network-monitor
+
+# HTTP traffic interception
+python http_interceptor.py
+
+# Or use the batch script
+.\start-http-interceptor.bat
+
+# Advanced options with mitmproxy
+mitmdump -s http_interceptor.py --set confdir=~/.mitmproxy -p 8080 -v
+```
+
+### 3. Configure System Proxy
+
+Configure applications to use the network monitor as a proxy:
 
 - **Proxy Host**: `127.0.0.1`
-- **Proxy Port**: `8080` (default, or whatever you specified with `-p`)
+- **Proxy Port**: `8080` (default)
 
-#### Option A: Application-specific Proxy Configuration
-Configure individual applications (browsers, etc.) to use the proxy.
+#### Option A: Application-specific Configuration
+Configure individual applications (browsers, HTTP clients) to use the proxy.
+
+#### Option B: System-wide Proxy (Windows)
+```powershell
+# Set system proxy (requires admin)
+netsh winhttp set proxy proxy-server="127.0.0.1:8080"
+
+# Remove system proxy
+netsh winhttp reset proxy
+```
 
 #### Option B: System-wide Proxy (Windows)
 ```powershell
