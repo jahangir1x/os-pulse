@@ -86,7 +86,8 @@ func (s *EventService) StartMonitoring(req *models.StartMonitorRequest) error {
 	}
 
 	// Forward request to agent service
-	return s.forwardStartMonitorRequest(req)
+	// return s.forwardStartMonitorRequest(req)
+	return nil
 }
 
 func (s *EventService) StopMonitoring(req *models.StopMonitorRequest) error {
@@ -97,7 +98,8 @@ func (s *EventService) StopMonitoring(req *models.StopMonitorRequest) error {
 	}
 
 	// Forward request to agent service
-	return s.forwardStopMonitorRequest(req)
+	// return s.forwardStopMonitorRequest(req)
+	return nil
 }
 
 func (s *EventService) forwardStartMonitorRequest(req *models.StartMonitorRequest) error {

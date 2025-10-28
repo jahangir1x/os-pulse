@@ -35,10 +35,14 @@ func (h *EventHandler) ReceiveEvent(c echo.Context) error {
 	// Parse timestamp
 	timestamp, err := time.Parse(time.RFC3339, timestampStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid timestamp format"})
+		// Try alternative timestamp format
+		timestamp, err = time.Parse(time.RFC3339Nano, timestampStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid timestamp format"})
+		}
 	}
 
-	// Extract session ID from event data if available
+	// Extract session ID from event data metadata (optional)
 	var sessionID string
 	if data, ok := rawEvent["data"].(map[string]interface{}); ok {
 		if metadata, ok := data["metadata"].(map[string]interface{}); ok {
@@ -48,12 +52,15 @@ func (h *EventHandler) ReceiveEvent(c echo.Context) error {
 		}
 	}
 
-	// Convert data to JSONB
-	eventData := datatypes.JSON{}
-	if err := eventData.Scan(rawEvent["data"]); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Failed to process event data"})
+	// Convert entire data object to JSONB
+	dataBytes, err := datatypes.NewJSONType(rawEvent["data"]).MarshalJSON()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Failed to marshal event data"})
 	}
 
+	eventData := datatypes.JSON(dataBytes)
+
+	// Create event (sessionID is optional, can be empty string)
 	event := &models.Event{
 		SessionID: sessionID,
 		EventType: eventType,
@@ -76,13 +83,8 @@ func (h *EventHandler) ReceiveHTTPEvent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
 	}
 
-	// For HTTP events, we need to determine the session ID
-	// For now, we'll use a default session or extract from context
+	// Session ID is optional - can be from query param or empty
 	sessionID := c.QueryParam("sessionId")
-	if sessionID == "" {
-		// Could extract from request headers or use a default
-		sessionID = "default-session"
-	}
 
 	if err := h.eventService.CreateHTTPEvent(sessionID, &httpEvent); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create HTTP event"})
@@ -97,11 +99,8 @@ func (h *EventHandler) ReceiveNetEvent(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request body"})
 	}
 
-	// For network events, we need to determine the session ID
+	// Session ID is optional - can be from query param or empty
 	sessionID := c.QueryParam("sessionId")
-	if sessionID == "" {
-		sessionID = "default-session"
-	}
 
 	if err := h.eventService.CreateNetworkEvents(sessionID, &networkEvent); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create network events"})

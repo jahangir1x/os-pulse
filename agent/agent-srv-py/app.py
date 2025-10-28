@@ -82,6 +82,9 @@ def list_processes():
                 except (ValueError, IndexError):
                     continue
         
+        # Sort processes by name
+        processes.sort(key=lambda p: p['name'].lower())
+        
         # Return just the array of processes for backend compatibility
         return jsonify(processes), 200
         

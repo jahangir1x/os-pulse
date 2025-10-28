@@ -57,7 +57,7 @@ func main() {
 	e.Use(middleware.CORS())
 
 	// Agent routes (for receiving events from agent)
-	e.POST("/api/events/events", eventHandler.ReceiveEvent)
+	e.POST("/api/events", eventHandler.ReceiveEvent)
 	e.POST("/api/http/events", eventHandler.ReceiveHTTPEvent)
 	e.POST("/api/net/events", eventHandler.ReceiveNetEvent)
 

@@ -7,6 +7,8 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 
 	"os-pulse-backend/internal/models"
@@ -139,6 +141,11 @@ func (s *SessionService) GetRunningProcesses(sessionID string) ([]*models.Runnin
 	if err := json.NewDecoder(resp.Body).Decode(&processes); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
+
+	// Sort processes by name (case-insensitive)
+	sort.Slice(processes, func(i, j int) bool {
+		return strings.ToLower(processes[i].Name) < strings.ToLower(processes[j].Name)
+	})
 
 	return processes, nil
 }

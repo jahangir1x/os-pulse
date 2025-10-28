@@ -15,13 +15,12 @@ type Session struct {
 	MonitoringStarted *time.Time `json:"monitoringStarted,omitempty" gorm:"column:monitoring_started"`
 	MonitoringEnded   *time.Time `json:"monitoringEnded,omitempty" gorm:"column:monitoring_ended"`
 	IsActive          bool       `json:"isActive" gorm:"column:is_active;default:false"`
-	Events            []Event    `json:"events,omitempty" gorm:"foreignKey:SessionID"`
 }
 
 // Event represents a system event from the agent
 type Event struct {
 	ID        uint64         `json:"id" gorm:"primaryKey;autoIncrement"`
-	SessionID string         `json:"sessionId" gorm:"column:session_id;type:varchar(255);not null;index"`
+	SessionID string         `json:"sessionId,omitempty" gorm:"column:session_id;type:varchar(255);index"`
 	EventType string         `json:"event_type" gorm:"column:event_type;type:varchar(100);not null"`
 	Timestamp time.Time      `json:"timestamp" gorm:"not null;index"`
 	Source    string         `json:"source" gorm:"type:varchar(100);not null"`
@@ -29,7 +28,6 @@ type Event struct {
 	IsSent    bool           `json:"isSent" gorm:"column:is_sent;default:false;index"`
 	CreatedAt time.Time      `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt time.Time      `json:"updatedAt" gorm:"autoUpdateTime"`
-	Session   Session        `json:"session,omitempty" gorm:"foreignKey:SessionID;references:ID"`
 }
 
 // EventData represents the nested data structure in events
