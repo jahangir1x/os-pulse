@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -118,12 +119,26 @@ func (s *SessionService) GetMonitorModes() []*models.MonitorMode {
 }
 
 func (s *SessionService) GetRunningProcesses(sessionID string) ([]*models.RunningProcess, error) {
-	// For now, return mock data
-	// In a real implementation, this would query the agent service
-	return []*models.RunningProcess{
-		{PID: 1234, Name: "notepad.exe"},
-		{PID: 5678, Name: "explorer.exe"},
-		{PID: 9012, Name: "chrome.exe"},
-		{PID: 3456, Name: "cmd.exe"},
-	}, nil
+	// Call agent service to get running processes
+	resp, err := http.Post(
+		s.agentServiceURL+"/api/list-processes",
+		"application/json",
+		bytes.NewBuffer([]byte("{}")),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call agent service: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("agent service returned error: %s", string(body))
+	}
+
+	var processes []*models.RunningProcess
+	if err := json.NewDecoder(resp.Body).Decode(&processes); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return processes, nil
 }

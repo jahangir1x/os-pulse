@@ -30,8 +30,8 @@ class FridaController:
             agent_script_path: Path to the compiled agent script (_agent.js)
         """
         self.agent_script_path = agent_script_path or self._find_agent_script()
-        self.session: Optional[frida.Session] = None
-        self.script: Optional[frida.Script] = None
+        self.sessions: List[frida.Session] = []  # Support multiple sessions
+        self.scripts: List[frida.Script] = []  # Support multiple scripts
         self.message_handler = MessageHandler()
         self.running = False
         
@@ -104,11 +104,14 @@ class FridaController:
             print(f"{Fore.GREEN}[SPAWN] Process spawned with PID: {pid}")
             
             # Attach to the spawned process
-            self.session = frida.attach(pid)
+            session = frida.attach(pid)
             print(f"{Fore.GREEN}[ATTACH] Attached to PID: {pid}")
             
+            # Store session
+            self.sessions.append(session)
+            
             # Create and load script
-            self._create_and_load_script()
+            self._create_and_load_script(session)
             
             # Resume the process
             frida.resume(pid)
@@ -134,18 +137,21 @@ class FridaController:
         try:
             if pid:
                 print(f"{Fore.YELLOW}[ATTACH] Attaching to PID: {pid}")
-                self.session = frida.attach(pid)
+                session = frida.attach(pid)
             elif process_name:
                 print(f"{Fore.YELLOW}[ATTACH] Attaching to process: {process_name}")
-                self.session = frida.attach(process_name)
+                session = frida.attach(process_name)
             else:
                 print(f"{Fore.RED}[ERROR] Must specify either process_name or pid")
                 return False
             
             print(f"{Fore.GREEN}[ATTACH] Successfully attached")
             
+            # Store session
+            self.sessions.append(session)
+            
             # Create and load script
-            self._create_and_load_script()
+            self._create_and_load_script(session)
             
             return True
             
@@ -156,17 +162,107 @@ class FridaController:
             print(f"{Fore.RED}[ERROR] Failed to attach to process: {e}")
             return False
     
-    def _create_and_load_script(self) -> None:
+    def attach_to_multiple_pids(self, pids: List[int]) -> bool:
+        """
+        Attach to multiple processes by PID
+        
+        Args:
+            pids: List of PIDs to attach to
+            
+        Returns:
+            True if at least one attachment succeeded, False otherwise
+        """
+        success_count = 0
+        failed_pids = []
+        
+        print(f"{Fore.YELLOW}[ATTACH] Attaching to {len(pids)} processes...")
+        
+        for pid in pids:
+            try:
+                session = frida.attach(pid)
+                self.sessions.append(session)
+                self._create_and_load_script(session)
+                print(f"{Fore.GREEN}[ATTACH] Successfully attached to PID: {pid}")
+                success_count += 1
+            except frida.ProcessNotFoundError:
+                print(f"{Fore.RED}[ERROR] Process not found: {pid}")
+                failed_pids.append(pid)
+            except Exception as e:
+                print(f"{Fore.RED}[ERROR] Failed to attach to PID {pid}: {e}")
+                failed_pids.append(pid)
+        
+        print(f"\n{Fore.CYAN}[SUMMARY] Attached to {success_count}/{len(pids)} processes")
+        if failed_pids:
+            print(f"{Fore.YELLOW}[SUMMARY] Failed PIDs: {failed_pids}")
+        
+        return success_count > 0
+    
+    def attach_to_all_processes(self, filter_name: Optional[str] = None) -> bool:
+        """
+        Attach to all running processes (optionally filtered by name)
+        
+        Args:
+            filter_name: Optional filter to match process names
+            
+        Returns:
+            True if at least one attachment succeeded, False otherwise
+        """
+        processes = self.list_processes(filter_name)
+        
+        if not processes:
+            print(f"{Fore.YELLOW}[ERROR] No processes found")
+            return False
+        
+        # Filter out system critical processes
+        excluded_names = ['System', 'csrss.exe', 'smss.exe', 'wininit.exe', 'services.exe']
+        safe_processes = [p for p in processes if p['name'] not in excluded_names and p['pid'] != os.getpid()]
+        
+        print(f"{Fore.YELLOW}[ATTACH] Found {len(safe_processes)} processes to attach to")
+        print(f"{Fore.YELLOW}[WARNING] Attaching to many processes may impact system performance")
+        print(f"{Fore.YELLOW}Press Ctrl+C within 5 seconds to cancel...")
+        
+        try:
+            time.sleep(5)
+        except KeyboardInterrupt:
+            print(f"\n{Fore.YELLOW}[CANCELLED] Attach operation cancelled")
+            return False
+        
+        success_count = 0
+        failed_count = 0
+        
+        for proc in safe_processes:
+            try:
+                session = frida.attach(proc['pid'])
+                self.sessions.append(session)
+                self._create_and_load_script(session)
+                print(f"{Fore.GREEN}[ATTACH] Attached to {proc['name']} (PID: {proc['pid']})")
+                success_count += 1
+            except (frida.ProcessNotFoundError, frida.PermissionDeniedError) as e:
+                # Silently skip processes we can't attach to
+                failed_count += 1
+            except Exception as e:
+                print(f"{Fore.RED}[ERROR] Failed to attach to {proc['name']} (PID: {proc['pid']}): {e}")
+                failed_count += 1
+        
+        print(f"\n{Fore.CYAN}[SUMMARY] Attached to {success_count} processes, {failed_count} failed")
+        
+        return success_count > 0
+    
+    def _create_and_load_script(self, session: frida.Session) -> None:
         """Create and load the agent script"""
         try:
             # Create script
-            self.script = self.session.create_script(self.agent_code)
+            script = session.create_script(self.agent_code)
             
             # Set up message handler
-            self.script.on('message', self._on_message)
+            script.on('message', self._on_message)
             
             # Load script
-            self.script.load()
+            script.load()
+            
+            # Store script
+            self.scripts.append(script)
+            
             print(f"{Fore.GREEN}[SCRIPT] Agent script loaded successfully")
             
         except Exception as e:
@@ -193,6 +289,7 @@ class FridaController:
         """Start the monitoring loop"""
         self.running = True
         print(f"\n{Fore.GREEN}[MONITOR] Starting monitoring...")
+        print(f"{Fore.GREEN}[MONITOR] Attached to {len(self.sessions)} session(s)")
         print(f"{Fore.GREEN}Press Ctrl+C to stop monitoring\n")
         
         try:
@@ -208,13 +305,21 @@ class FridaController:
         self.running = False
         
         try:
-            if self.script:
-                self.script.unload()
-                print(f"{Fore.YELLOW}[SCRIPT] Agent script unloaded")
+            # Unload all scripts
+            for script in self.scripts:
+                try:
+                    script.unload()
+                except:
+                    pass
+            print(f"{Fore.YELLOW}[SCRIPT] Agent scripts unloaded")
             
-            if self.session:
-                self.session.detach()
-                print(f"{Fore.YELLOW}[SESSION] Detached from process")
+            # Detach all sessions
+            for session in self.sessions:
+                try:
+                    session.detach()
+                except:
+                    pass
+            print(f"{Fore.YELLOW}[SESSION] Detached from {len(self.sessions)} process(es)")
                 
         except Exception as e:
             print(f"{Fore.RED}[ERROR] Error during cleanup: {e}")

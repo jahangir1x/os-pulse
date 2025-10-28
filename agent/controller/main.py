@@ -58,22 +58,30 @@ def spawn_command(args):
 
 
 def attach_command(args):
-    """Attach to existing process"""
+    """Attach to existing process(es)"""
     controller = FridaController()
     
-    if args.pid:
+    if args.all:
+        # Attach to all processes
+        success = controller.attach_to_all_processes(filter_name=args.filter)
+    elif args.pids:
+        # Attach to multiple PIDs
+        success = controller.attach_to_multiple_pids(args.pids)
+    elif args.pid:
+        # Attach to single PID
         success = controller.attach_to_process(pid=args.pid)
     elif args.process_name:
+        # Attach to single process name
         success = controller.attach_to_process(process_name=args.process_name)
     else:
-        print(f"{Fore.RED}Must specify either --pid or --process-name")
+        print(f"{Fore.RED}Must specify --pid, --pids, --process-name, or --all")
         sys.exit(1)
     
     if success:
-        print(f"{Fore.GREEN}Successfully attached to process")
+        print(f"{Fore.GREEN}Successfully attached to process(es)")
         controller.start_monitoring()
     else:
-        print(f"{Fore.RED}Failed to attach to process")
+        print(f"{Fore.RED}Failed to attach to process(es)")
         sys.exit(1)
 
 
@@ -87,6 +95,9 @@ Examples:
   python main.py spawn --executable "C:\\Windows\\System32\\notepad.exe"
   python main.py attach --process-name "notepad.exe"
   python main.py attach --pid 1234
+  python main.py attach --pids 1234 5678 9012
+  python main.py attach --all
+  python main.py attach --all --filter notepad
   python main.py list-processes
   python main.py list-processes --filter notepad
         """
@@ -107,10 +118,13 @@ Examples:
     spawn_parser.set_defaults(func=spawn_command)
     
     # Attach command
-    attach_parser = subparsers.add_parser('attach', help='Attach to existing process')
+    attach_parser = subparsers.add_parser('attach', help='Attach to existing process(es)')
     attach_group = attach_parser.add_mutually_exclusive_group(required=True)
     attach_group.add_argument('--process-name', help='Name of process to attach to')
     attach_group.add_argument('--pid', type=int, help='PID of process to attach to')
+    attach_group.add_argument('--pids', type=int, nargs='+', help='Multiple PIDs to attach to')
+    attach_group.add_argument('--all', action='store_true', help='Attach to all processes')
+    attach_parser.add_argument('--filter', help='Filter processes by name (used with --all)')
     attach_parser.set_defaults(func=attach_command)
     
     # List processes command

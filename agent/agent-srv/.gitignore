@@ -1,0 +1,9 @@
+# Binaries
+*.exe
+agent-srv
+
+# Environment
+.env
+
+# Go
+go.sum
