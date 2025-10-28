@@ -32,6 +32,7 @@ def allowed_file(filename):
 
 
 @app.route('/api/upload', methods=['POST'])
+@app.route('/api/upload-file', methods=['POST'])
 def upload_file():
     """Handle file uploads and save them to Desktop"""
     if 'file' not in request.files:
@@ -55,6 +56,7 @@ def upload_file():
 
 
 @app.route('/api/processes', methods=['GET'])
+@app.route('/api/list-processes', methods=['GET', 'POST'])
 def list_processes():
     """List running processes using tasklist"""
     try:
@@ -80,10 +82,8 @@ def list_processes():
                 except (ValueError, IndexError):
                     continue
         
-        return jsonify({
-            'processes': processes,
-            'count': len(processes)
-        }), 200
+        # Return just the array of processes for backend compatibility
+        return jsonify(processes), 200
         
     except subprocess.CalledProcessError as e:
         return jsonify({'error': f'Failed to list processes: {str(e)}'}), 500
@@ -92,6 +92,7 @@ def list_processes():
 
 
 @app.route('/api/monitor/start', methods=['POST'])
+@app.route('/api/start-monitor', methods=['POST'])
 def start_monitor():
     """Start monitoring based on mode"""
     data = request.get_json()
@@ -134,9 +135,8 @@ def start_monitor():
         if not file_name:
             return jsonify({'error': 'Mode 3 requires fileName'}), 400
         
-        # For now, spawn notepad for testing
-        exec_path = app.config['UPLOAD_FOLDER'] / file_name
-        # exec_path = r"C:\Windows\System32\Notepad.exe"
+        # Use the uploaded file from Desktop
+        exec_path = str(app.config['UPLOAD_FOLDER'] / file_name)
         cmd.extend(['spawn', '--executable', exec_path])
     
     try:
@@ -167,7 +167,8 @@ def start_monitor():
         return jsonify({'error': f'Failed to start monitoring: {str(e)}'}), 500
 
 
-@app.route('/monitor/stop', methods=['POST'])
+@app.route('/api/monitor/stop', methods=['POST'])
+@app.route('/api/stop-monitor', methods=['POST'])
 def stop_monitor():
     """Stop monitoring for a session"""
     data = request.get_json()

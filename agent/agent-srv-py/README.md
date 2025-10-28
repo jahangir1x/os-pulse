@@ -40,61 +40,69 @@ The server will start on `http://localhost:8080`
 
 ### 1. Upload File
 ```bash
-POST /upload
+POST /api/upload
+POST /api/upload-file (backend compatible)
 Content-Type: multipart/form-data
 
-curl -X POST http://localhost:8080/upload -F "file=@C:\path\to\file.exe"
+curl -X POST http://localhost:7000/api/upload-file -F "file=@C:\path\to\file.exe"
 ```
 
 ### 2. List Processes
 ```bash
-GET /processes
+GET /api/processes
+GET /api/list-processes (backend compatible)
+POST /api/list-processes (backend compatible)
 
-curl http://localhost:8080/processes
+curl http://localhost:7000/api/list-processes
+curl -X POST http://localhost:7000/api/list-processes -H "Content-Type: application/json" -d "{}"
 ```
 
 ### 3. Start Monitor - Mode 1 (All Processes)
 ```bash
-POST /monitor/start
+POST /api/monitor/start
+POST /api/start-monitor (backend compatible)
 Content-Type: application/json
 
 # Without filter
-curl -X POST http://localhost:8080/monitor/start \
+curl -X POST http://localhost:7000/api/start-monitor \
   -H "Content-Type: application/json" \
   -d "{\"sessionId\":\"session-123\",\"mode\":1}"
 
 # With filter
-curl -X POST http://localhost:8080/monitor/start \
+curl -X POST http://localhost:7000/api/start-monitor \
   -H "Content-Type: application/json" \
   -d "{\"sessionId\":\"session-123\",\"fileName\":\"notepad.exe\",\"mode\":1}"
 ```
 
 ### 4. Start Monitor - Mode 2 (Specific Processes)
 ```bash
-POST /monitor/start
+POST /api/monitor/start
+POST /api/start-monitor (backend compatible)
 Content-Type: application/json
 
-curl -X POST http://localhost:8080/monitor/start \
+curl -X POST http://localhost:7000/api/start-monitor \
   -H "Content-Type: application/json" \
   -d "{\"sessionId\":\"session-456\",\"mode\":2,\"processes\":[1234,5678]}"
 ```
 
 ### 5. Start Monitor - Mode 3 (Spawn Uploaded)
 ```bash
-POST /monitor/start
+POST /api/monitor/start
+POST /api/start-monitor (backend compatible)
 Content-Type: application/json
 
-curl -X POST http://localhost:8080/monitor/start \
+curl -X POST http://localhost:7000/api/start-monitor \
   -H "Content-Type: application/json" \
   -d "{\"sessionId\":\"session-789\",\"fileName\":\"myapp.exe\",\"mode\":3}"
 ```
 
 ### 6. Stop Monitor
 ```bash
-POST /monitor/stop
+POST /api/monitor/stop
+POST /api/stop-monitor (backend compatible)
 Content-Type: application/json
 
-curl -X POST http://localhost:8080/monitor/stop \
+curl -X POST http://localhost:7000/api/stop-monitor \
   -H "Content-Type: application/json" \
   -d "{\"sessionId\":\"session-123\"}"
 ```
@@ -103,7 +111,23 @@ curl -X POST http://localhost:8080/monitor/stop \
 ```bash
 GET /health
 
-curl http://localhost:8080/health
+curl http://localhost:7000/health
+```
+
+## Backend Compatibility
+
+All endpoints support both REST-style paths and backend-compatible paths:
+- `/api/upload` and `/api/upload-file` (file upload)
+- `/api/processes` (GET) and `/api/list-processes` (GET/POST) (list processes)
+- `/api/monitor/start` and `/api/start-monitor` (start monitoring)
+- `/api/monitor/stop` and `/api/stop-monitor` (stop monitoring)
+
+The response format for `/api/list-processes` is a JSON array of process objects:
+```json
+[
+  {"name": "notepad.exe", "pid": 1234},
+  {"name": "chrome.exe", "pid": 5678}
+]
 ```
 
 ## Environment Variables

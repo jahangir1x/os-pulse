@@ -218,19 +218,23 @@ class FridaController:
             print(f"{Fore.YELLOW}[ERROR] No processes found")
             return False
         
-        # Filter out system critical processes
-        excluded_names = ['System', 'csrss.exe', 'smss.exe', 'wininit.exe', 'services.exe']
+        # Filter out system critical processes and development tools
+        excluded_names = [
+            'System', 'csrss.exe', 'smss.exe', 'wininit.exe', 'services.exe',
+            'python.exe', 'go.exe', 'cloudflared.exe'
+        ]
         safe_processes = [p for p in processes if p['name'] not in excluded_names and p['pid'] != os.getpid()]
+
+        # list process names
+        process_names = [p['name'] for p in safe_processes]
+        print(f"{Fore.YELLOW}Processes to attach to: {process_names}")
+
+        # list process pids
+        process_pids = [p['pid'] for p in safe_processes]
+        print(f"{Fore.YELLOW}Process PIDs to attach to: {process_pids}")
         
         print(f"{Fore.YELLOW}[ATTACH] Found {len(safe_processes)} processes to attach to")
         print(f"{Fore.YELLOW}[WARNING] Attaching to many processes may impact system performance")
-        print(f"{Fore.YELLOW}Press Ctrl+C within 5 seconds to cancel...")
-        
-        try:
-            time.sleep(5)
-        except KeyboardInterrupt:
-            print(f"\n{Fore.YELLOW}[CANCELLED] Attach operation cancelled")
-            return False
         
         success_count = 0
         failed_count = 0
