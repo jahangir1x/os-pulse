@@ -131,6 +131,7 @@ type RunningProcess struct {
 // StartMonitorRequest represents the request to start monitoring
 type StartMonitorRequest struct {
 	SessionID string `json:"sessionId"`
+	FileName  string `json:"fileName,omitempty"`
 	Mode      int    `json:"mode"`
 	Processes []int  `json:"processes,omitempty"`
 }

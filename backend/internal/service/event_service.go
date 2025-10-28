@@ -101,6 +101,15 @@ func (s *EventService) StopMonitoring(req *models.StopMonitorRequest) error {
 }
 
 func (s *EventService) forwardStartMonitorRequest(req *models.StartMonitorRequest) error {
+	// Fetch the session to get the file name
+	session, err := s.sessionRepo.GetSessionByID(req.SessionID)
+	if err != nil {
+		return fmt.Errorf("failed to get session: %w", err)
+	}
+
+	// Add file name to the request
+	req.FileName = session.FileName
+
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)
