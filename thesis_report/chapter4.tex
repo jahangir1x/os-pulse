@@ -265,39 +265,38 @@ The backend implements three distinct layers:
 
 \subsubsection{API Endpoint Design}
 
-The backend exposes RESTful API endpoints organized by resource:
+The backend exposes RESTful API endpoints organized by resource and client type:
 
-\textbf{Session Management Endpoints:}
+\textbf{Frontend-to-Backend Endpoints:}
 \begin{itemize}
-    \item \texttt{POST /api/sessions} - Create new monitoring session
-    \item \texttt{GET /api/sessions} - List all sessions
-    \item \texttt{GET /api/sessions/:id} - Get session details
-    \item \texttt{PUT /api/sessions/:id} - Update session status
-    \item \texttt{DELETE /api/sessions/:id} - Delete session
+    \item \texttt{POST /api/create-session} - Create new monitoring session with file upload (multipart/form-data)
+    \item \texttt{GET /api/monitor-modes} - Get available monitoring modes (All Processes, Specific Processes, Spawn Uploaded)
+    \item \texttt{POST /api/start-monitor} - Start monitoring with specified mode and session ID
+    \item \texttt{POST /api/monitor/stop} - Stop active monitoring session
+    \item \texttt{GET /api/events/:sessionId} - Get events for session with pagination
+    \item \texttt{POST /api/list-processes} - List running processes on monitored system
 \end{itemize}
 
-\textbf{Event Endpoints:}
+\textbf{Agent-to-Backend Endpoints:}
 \begin{itemize}
-    \item \texttt{POST /api/events} - Submit event (from agents)
-    \item \texttt{GET /api/sessions/:id/events} - Get events for session
-    \item \texttt{GET /api/events/:id} - Get specific event details
-    \item \texttt{GET /api/sessions/:id/events/export} - Export events
+    \item \texttt{POST /api/events/events} - Submit file operation and process creation events from controller agent
+    \item \texttt{POST /api/http/events} - Submit HTTP/HTTPS traffic events from network monitor
+    \item \texttt{POST /api/net/events} - Submit raw network packet events from packet analyzer
 \end{itemize}
 
-\textbf{Monitoring Control Endpoints:}
-\begin{itemize}
-    \item \texttt{POST /api/sessions/:id/start} - Start monitoring
-    \item \texttt{POST /api/sessions/:id/stop} - Stop monitoring
-    \item \texttt{POST /api/sessions/:id/pause} - Pause monitoring
-    \item \texttt{POST /api/sessions/:id/resume} - Resume monitoring
-\end{itemize}
+\textbf{Event Data Structures:}
 
-\textbf{File Management Endpoints:}
-\begin{itemize}
-    \item \texttt{POST /api/files/upload} - Upload malware sample
-    \item \texttt{GET /api/files/:id} - Download file
-    \item \texttt{DELETE /api/files/:id} - Delete uploaded file
-\end{itemize}
+File operation events include: handle, filePath, bytesTransferred, content (hex), operation type (ReadFile/WriteFile), and process metadata (sessionId, processName, processId).
+
+Process creation events include: processHandle, threadHandle, imagePath, commandLine, currentDirectory, status, operation (NtCreateUserProcess), and parent process metadata.
+
+HTTP events include: timestamp\_ms, kind (request/response), client/server addresses, full request (method, URL, headers, body), response (status code, headers, body with base64 encoding for binary data).
+
+Network packet events include: timestamp, frame\_number, protocol, source/destination IPs and ports, packet length, and info field with hex-encoded data.
+
+\textbf{Response Formats:}
+
+All successful responses return JSON with appropriate data structures. Session creation returns \texttt{\{"sessionId": "uuid"\}}. Event queries return arrays of event objects with pagination support. Monitoring control endpoints return \texttt{\{"message": "success message"\}} on successful operations.
 
 \textbf{Agent Communication Endpoints:}
 \begin{itemize}

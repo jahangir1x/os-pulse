@@ -248,6 +248,57 @@ Proper memory management prevents agent-induced system instability:
 
 \subsection{Network Monitoring}
 
+The network monitoring subsystem consists of two specialized agents: an HTTP interceptor using mitmproxy and a raw packet analyzer using tshark.
+
+\subsubsection{HTTP/HTTPS Traffic Interception}
+
+The HTTP interceptor (\texttt{http\_interceptor.py}) leverages mitmproxy for comprehensive HTTP/HTTPS monitoring:
+
+\textbf{Implementation Architecture:}
+\begin{itemize}
+    \item Runs as a transparent proxy on configurable port (default: 8080)
+    \item Implements mitmproxy addon with request() and response() callbacks
+    \item Uses ThreadPoolExecutor for non-blocking event submission to backend
+    \item Configurable body size limits (default: 100KB) to prevent memory exhaustion
+\end{itemize}
+
+\textbf{Event Processing Pipeline:}
+\begin{enumerate}
+    \item Intercepts HTTP/HTTPS requests before forwarding to destination
+    \item Extracts full request metadata: method, URL, headers, body
+    \item Intercepts responses and captures status code, headers, body
+    \item Differentiates text and binary content with appropriate encoding
+    \item Submits complete transaction as event to backend API endpoint (/api/http/events)
+\end{enumerate}
+
+\textbf{SSL/TLS Handling:}
+mitmproxy automatically handles SSL/TLS interception by presenting trusted certificates. Users must install mitmproxy CA certificate for HTTPS traffic analysis.
+
+\textbf{Event Structure:}
+Each HTTP event includes timestamp\_ms, kind (request/response), client/server addresses, complete request object (method, scheme, host, port, path, URL, HTTP version, headers, body), and response object (status code, reason, HTTP version, headers, body) with base64 encoding for binary content.
+
+\subsubsection{Raw Network Packet Capture}
+
+The network packet analyzer (\texttt{net\_interceptor.py}) uses tshark for low-level packet capture:
+
+\textbf{Implementation Details:}
+\begin{itemize}
+    \item Spawns tshark subprocess with configured network interface
+    \item Applies capture filter to exclude HTTP/HTTPS traffic (already handled by HTTP interceptor)
+    \item Captures specific fields: timestamp, frame number, protocol, IP addresses, ports, packet length, info
+    \item Implements event batching (default: 25 events) to reduce API call overhead
+    \item Uses separate sender thread for non-blocking batch transmission
+\end{itemize}
+
+\textbf{Field Extraction:}
+tshark runs with -T fields option to extract structured data from each packet. Fields are separated by pipe character for easy parsing. The implementation converts info field to hex format for consistent display.
+
+\textbf{Event Batching Strategy:}
+Events are queued and sent in batches either when batch size reaches threshold or after time interval (default: 2 seconds), whichever occurs first. This balances real-time visibility with network efficiency.
+
+\textbf{Supported Protocols:}
+Captures ARP, ICMP, DNS, FTP, SMTP, SSH, custom protocols, and any traffic not excluded by capture filter.
+
 The network monitoring component captures and analyzes network traffic using multiple approaches for comprehensive coverage.
 
 \subsubsection{HTTP/HTTPS Traffic Interception}
@@ -284,6 +335,46 @@ Captured traffic undergoes automated analysis:
     \item Communication pattern analysis (beaconing, command-and-control traffic)
     \item Geographic analysis of destination IP addresses
     \item Suspicious behavior flagging (connections to known malicious IPs, unusual ports)
+\end{itemize}
+
+\subsection{Controller Agent Implementation}
+
+The Python controller (\texttt{main.py}) serves as the orchestration layer coordinating all monitoring activities:
+
+\textbf{Command-Line Interface:}
+Implements argparse-based CLI with three main commands:
+\begin{itemize}
+    \item \texttt{spawn} - Launch new process with immediate monitoring
+    \item \texttt{attach} - Attach to existing process by name or PID  
+    \item \texttt{list-processes} - Display running processes with filtering
+\end{itemize}
+
+\textbf{Frida Controller (\texttt{frida\_controller.py}):}
+Manages Frida session lifecycle:
+\begin{itemize}
+    \item Device enumeration and local device connection
+    \item Process enumeration with name/PID filtering
+    \item Script loading and injection into target processes
+    \item Session management (spawn/attach/detach)
+    \item Message handling from injected agent
+\end{itemize}
+
+\textbf{Message Handler (\texttt{message\_handler.py}):}
+Processes events received from Frida agent:
+\begin{itemize}
+    \item Event deserialization from JSON messages
+    \item Colorized console output using colorama for real-time display
+    \item Event forwarding to backend via HTTP POST to /api/events/events
+    \item Error handling and logging for debugging
+\end{itemize}
+
+\textbf{Configuration Management (\texttt{config.py}):}
+Environment-based configuration:
+\begin{itemize}
+    \item Backend API URL (default: http://localhost:3003)
+    \item Agent script path (default: ../injector/\_agent.js)
+    \item Session ID management
+    \item Logging levels and output formats
 \end{itemize}
 
 \subsection{Event Processing}
@@ -335,41 +426,61 @@ The React-based frontend provides an intuitive interface for monitoring control,
 
 The frontend follows a component-based architecture with clear separation of concerns and reusable components.
 
-\subsubsection{Component Hierarchy}
+\subsubsection{Main Application Components}
 
-The application is structured hierarchically:
-
+\textbf{App.tsx - Application Root:}
 \begin{itemize}
-    \item \textbf{App Component:} Root component managing global state and routing
-    \item \textbf{Dashboard Component:} Main monitoring interface with layout management
-    \item \textbf{Session Manager Component:} Controls for session creation and management
-    \item \textbf{Event Display Components:} Tables and visualizations for different event types
-    \item \textbf{Filter Components:} Search and filtering controls for event data
-    \item \textbf{VNC Viewer Component:} Embedded virtual machine display
-    \item \textbf{Control Panel Component:} Monitoring controls and status indicators
+    \item Manages routing between FileUpload and AnalysisDashboard views
+    \item Handles session state and session ID management
+    \item Implements file upload workflow with backend communication
+    \item Provides global error boundaries for graceful error handling
+\end{itemize}
+
+\textbf{AnalysisDashboard.tsx - Main Dashboard:}
+\begin{itemize}
+    \item Implements split-screen layout with noVNC viewer (left) and event tables (right)
+    \item Manages monitoring state (active/inactive) and event fetching lifecycle
+    \item Handles automatic zoom adjustment (50\% when monitoring starts)
+    \item Coordinates between MonitoringControls and event display components
+    \item Implements conditional event fetching (only when monitoring is active)
+    \item Provides real-time process list display with unique process extraction
+\end{itemize}
+
+\textbf{MonitoringControls.tsx - Session Controls:}
+\begin{itemize}
+    \item Provides Start/Stop monitoring buttons with state management
+    \item Communicates with backend /api/start-monitor and /api/monitor/stop endpoints
+    \item Implements onMonitoringStateChange callback for parent notification
+    \item Handles monitoring mode selection (All Processes, Specific Processes, Spawn Uploaded)
+    \item Displays current monitoring status with visual indicators
+\end{itemize}
+
+\textbf{EventTables.tsx - Event Visualization:}
+\begin{itemize}
+    \item Implements tabbed interface for event categories (File Operations, Process Events, Network Activity)
+    \item Provides sortable, paginated tables for each event type
+    \item Displays event metadata: timestamp, process name/ID, operation details
+    \item Implements row expansion for detailed event inspection
+    \item Handles large datasets efficiently with virtual scrolling
+\end{itemize}
+
+\textbf{ProcessList.tsx - Process Monitoring:}
+\begin{itemize}
+    \item Extracts unique processes from captured events
+    \item Displays process name, PID, and first occurrence timestamp
+    \item Updates dynamically as new processes are detected
+    \item Provides filtering and search capabilities
 \end{itemize}
 
 \subsubsection{State Management Strategy}
 
-State management employs React hooks for local component state and context for global application state:
+State management employs React hooks for local component state and props for parent-child communication:
 
 \begin{itemize}
-    \item \textbf{Local State:} Component-specific data (form inputs, expansion states, temporary filters)
-    \item \textbf{Global State:} Application-wide data (current session, authentication, configuration)
-    \item \textbf{Server State:} Backend data managed through custom hooks with caching and synchronization
-    \item \textbf{URL State:} Query parameters for shareable filtering and navigation states
-\end{itemize}
-
-\subsubsection{Component Communication Patterns}
-
-Components communicate through several mechanisms:
-
-\begin{itemize}
-    \item Props for parent-to-child data flow
-    \item Callbacks for child-to-parent event notification
-    \item Context for deeply nested component access to global state
-    \item Custom hooks for shared logic and state management
-    \item Event bus for loosely coupled component communication
+    \item \textbf{useState:} Component-specific data (monitoring status, event lists, filter states)
+    \item \textbf{useEffect:} Side effects (polling for events, automatic zoom adjustment)
+    \item \textbf{Callback Props:} Parent-child communication (monitoring state changes, session updates)
+    \item \textbf{Conditional Rendering:} Display different views based on session and monitoring state
 \end{itemize}
 
 \subsection{Real-time Data Visualization}
@@ -378,14 +489,53 @@ Real-time visualization presents monitoring events as they occur with minimal la
 
 \subsubsection{Polling-Based Updates}
 
-The frontend implements polling for event updates:
+The frontend implements intelligent polling for event updates:
 
+\textbf{Conditional Event Fetching:}
 \begin{itemize}
-    \item Configurable polling interval balancing responsiveness and server load
-    \item Incremental updates fetching only new events since last poll
-    \item Exponential backoff when no new events are available
-    \item Automatic pause when user navigates away from monitoring view
-    \item Resume monitoring when user returns to active tab
+    \item Events are only fetched when monitoring is active (started via MonitoringControls)
+    \item useEffect hook with monitoring state dependency triggers/stops polling
+    \item Polling interval: 1-2 seconds for near real-time updates
+    \item Automatic cleanup of intervals when component unmounts
+\end{itemize}
+
+\textbf{Implementation Pattern:}
+\begin{verbatim}
+useEffect(() => {
+  if (isMonitoringActive) {
+    const interval = setInterval(() => {
+      fetchEvents(sessionId);
+    }, 2000);
+    return () => clearInterval(interval);
+  }
+}, [isMonitoringActive, sessionId]);
+\end{verbatim}
+
+\textbf{API Communication:}
+\begin{itemize}
+    \item GET request to /api/events/:sessionId endpoint
+    \item Backend returns paginated events (10-50 per request)
+    \item Frontend appends new events to existing list
+    \item Duplicate prevention through event ID tracking
+\end{itemize}
+
+\subsubsection{Automatic UI Adjustments}
+
+The dashboard implements smart UI adaptations:
+
+\textbf{Zoom Control:}
+\begin{itemize}
+    \item When monitoring starts, noVNC iframe automatically zooms to 50\%
+    \item Provides optimal balance between VM visibility and event table space
+    \item Implemented via handleMonitoringStateChange callback
+    \item User can manually adjust zoom if needed
+\end{itemize}
+
+\textbf{Layout Management:}
+\begin{itemize}
+    \item Split-screen layout allocates space between VM display and events
+    \item Responsive design adapts to different screen sizes
+    \item Event tables expand when more screen real estate is available
 \end{itemize}
 
 \subsubsection{Event Table Implementation}
@@ -393,12 +543,12 @@ The frontend implements polling for event updates:
 Event tables provide comprehensive event display with interactive features:
 
 \begin{itemize}
-    \item Virtual scrolling for efficient rendering of thousands of events
-    \item Column sorting by timestamp, event type, or process ID
-    \item Expandable rows showing detailed event data
-    \item Syntax highlighting for JSON event payloads
+    \item Tabbed interface separating File Operations, Process Events, and Network Activity
+    \item Sortable columns by timestamp, event type, process name, or process ID
+    \item Expandable rows showing full event details in formatted JSON
+    \item Color-coded event types for quick visual identification
     \item Responsive column widths adapting to screen size
-    \item Sticky headers maintaining context during scrolling
+    \item Pagination for handling thousands of events efficiently
 \end{itemize}
 
 \subsubsection{Filtering and Search Functionality}
@@ -445,15 +595,48 @@ Session controls enable monitoring lifecycle management:
 
 \subsubsection{VNC Integration}
 
-The noVNC component provides virtual machine access:
+The noVNC component provides direct virtual machine access through iframe embedding:
 
+\textbf{Integration Architecture:}
 \begin{itemize}
-    \item WebSocket connection to VNC server with automatic reconnection
-    \item Canvas-based rendering of remote desktop display
-    \item Keyboard and mouse input forwarding
-    \item Connection status indicator and troubleshooting messages
-    \item Automatic zoom adjustment for optimal viewing
-    \item Fullscreen mode for immersive analysis
+    \item noVNC served as static files from frontend/noVNC directory
+    \item Lightweight HTML client (vnc\_lite.html) embedded via iframe
+    \item WebSocket connection to VNC server running on VM host
+    \item websockify proxy bridges WebSocket to raw VNC protocol
+\end{itemize}
+
+\textbf{iframe Implementation:}
+\begin{verbatim}
+<iframe 
+  src="/noVNC/vnc_lite.html?autoconnect=true&resize=scale"
+  style={{ zoom: `${zoomLevel}%` }}
+  className="w-full h-full border-0"
+/>
+\end{verbatim}
+
+\textbf{Connection Configuration:}
+\begin{itemize}
+    \item Autoconnect parameter initiates connection on load
+    \item Resize mode set to 'scale' for responsive display
+    \item Dynamic zoom control (50\% default, adjustable 25-100\%)
+    \item Connection status reflected in UI
+    \item Manual reconnect option if connection drops
+\end{itemize}
+
+\textbf{User Interaction:}
+\begin{itemize}
+    \item Full keyboard and mouse input forwarding through iframe
+    \item Real-time display updates showing VM desktop
+    \item Zoom controls external to iframe for better UX
+    \item No fullscreen mode (split-screen maintained for event visibility)
+\end{itemize}
+
+\textbf{Setup Process:}
+\begin{itemize}
+    \item websockify proxy started via novnc\_proxy.bat script
+    \item Proxy listens on port 6080 for WebSocket connections
+    \item Forwards traffic to VNC server on port 5900
+    \item noVNC client connects to ws://localhost:6080
 \end{itemize}
 
 \subsubsection{Export and Reporting}
@@ -470,14 +653,52 @@ Data export functionality enables external analysis:
 
 \subsubsection{Responsive Design Implementation}
 
-The interface adapts to different screen sizes:
+The interface adapts to different screen sizes using Tailwind CSS utilities:
 
+\textbf{Tailwind CSS Integration:}
 \begin{itemize}
-    \item Mobile-first design approach with progressive enhancement
-    \item Breakpoint-based layout changes using Tailwind responsive utilities
-    \item Collapsible sidebars and panels on smaller screens
-    \item Touch-friendly controls with appropriate target sizes
-    \item Orientation handling for tablets and mobile devices
+    \item Utility-first CSS framework with preconfigured responsive breakpoints
+    \item Custom theme configuration in tailwind.config.js
+    \item shadcn/ui component library for consistent UI primitives
+    \item Dark mode support (not currently active)
+\end{itemize}
+
+\textbf{Component Styling Pattern:}
+\begin{itemize}
+    \item Responsive grid layouts: grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3
+    \item Flexible spacing: p-4 (padding), m-2 (margin), gap-4 (grid gap)
+    \item Responsive sizing: w-full h-screen max-w-7xl
+    \item Color scheme: bg-background text-foreground border-border
+    \item Interactive states: hover:bg-accent focus:ring-2
+\end{itemize}
+
+\textbf{Split-Screen Layout:}
+\begin{verbatim}
+<div className="grid grid-cols-2 gap-4 h-full">
+  <div className="border rounded-lg overflow-hidden">
+    {/* noVNC iframe */}
+  </div>
+  <div className="flex flex-col gap-4">
+    {/* Event tables and controls */}
+  </div>
+</div>
+\end{verbatim}
+
+\textbf{Responsive Behavior:}
+\begin{itemize}
+    \item Desktop (>768px): Two-column layout with VM and events side-by-side
+    \item Mobile (<768px): Currently optimized for desktop, mobile support planned
+    \item Tablet: Maintains two-column layout with adjusted spacing
+    \item All components use responsive utilities for consistent scaling
+\end{itemize}
+
+\textbf{shadcn/ui Components Used:}
+\begin{itemize}
+    \item Button: Consistent button styling with variants (default, outline, ghost)
+    \item Card: Container component for event tables and controls
+    \item Table: Data table with sortable headers and row interactions
+    \item Tabs: Tab interface for File/Process/Network event separation
+    \item Badge: Color-coded event type indicators
 \end{itemize}
 
 \section{Integration and Communication}
@@ -486,81 +707,290 @@ Integration brings together frontend, backend, and agent components into a cohes
 
 \subsection{API Communication Layer}
 
-The frontend communicates with the backend through a structured API client:
+The frontend communicates with the backend through standard fetch API calls:
 
+\textbf{API Request Pattern:}
+\begin{verbatim}
+const response = await fetch(`http://localhost:8080/api/events/${sessionId}`);
+const data = await response.json();
+\end{verbatim}
+
+\textbf{Request Implementation:}
 \begin{itemize}
-    \item Centralized HTTP client configuration with base URL and headers
-    \item Automatic request/response interceptors for authentication and error handling
-    \item Request timeout configuration with appropriate limits
-    \item Response caching for frequently accessed, slow-changing data
+    \item Direct fetch() calls to Go backend on localhost:8080
+    \item JSON request/response format for all endpoints
+    \item POST requests for session creation and monitoring control
+    \item GET requests for retrieving events and session data
+    \item Error handling with try-catch blocks
+    \item Response status checking before parsing JSON
+\end{itemize}
+
+\textbf{Key API Endpoints:}
+\begin{itemize}
+    \item POST /api/create-session: Create new monitoring session
+    \item POST /api/start-monitor: Start monitoring with session ID and PID
+    \item POST /api/monitor/stop: Stop active monitoring
+    \item GET /api/events/:sessionId: Retrieve all events for session
+    \item GET /api/sessions: List all available sessions
+\end{itemize}
+
+\textbf{Error Handling:}
+\begin{itemize}
+    \item Network error detection with user-friendly messages
+    \item HTTP status code validation (200 OK expected)
+    \item JSON parsing error handling
+    \item User notification via toast messages or error states
+    \item Graceful degradation when backend unavailable
+\end{itemize}
     \item Request cancellation for abandoned operations (user navigation)
     \item Retry logic for transient network failures
 \end{itemize}
 
 \subsection{Agent-Backend Coordination}
 
-The backend coordinates agent activities through a control protocol:
+The backend coordinates agent activities through HTTP POST endpoints:
 
+\textbf{Agent Communication Protocol:}
 \begin{itemize}
-    \item Agent registration and heartbeat mechanism
-    \item Command dispatch for monitoring control (start, stop, configure)
-    \item Status polling for agent health monitoring
-    \item Error reporting from agents to backend
-    \item Agent discovery and automatic reconnection
-    \item Load balancing for multiple agent instances
+    \item Agents send events via POST to /api/events/events (Frida events)
+    \item HTTP interceptor sends via POST to /api/http/events
+    \item Network monitor sends via POST to /api/net/events
+    \item All payloads use JSON format with consistent schema
+    \item Backend responds with 200 OK on successful storage
+\end{itemize}
+
+\textbf{Event Submission Flow:}
+\begin{enumerate}
+    \item Agent collects events in memory (batching)
+    \item When batch size reached or timeout occurs, POST to backend
+    \item Backend validates JSON schema
+    \item GORM stores events in PostgreSQL Events table
+    \item Session ID links events to monitoring session
+    \item Response confirms successful storage
+\end{enumerate}
+
+\textbf{Controller Management:}
+\begin{itemize}
+    \item Python controller (main.py) runs as separate process
+    \item Receives start command with session ID and PID via backend API call
+    \item Spawns or attaches to target process using Frida
+    \item Injects TypeScript agent into process
+    \item Monitors agent status and handles crashes
+    \item Stops monitoring on backend request
+\end{itemize}
+
+\textbf{No Agent Registration:}
+\begin{itemize}
+    \item Agents do not register with backend
+    \item Backend is passive receiver of event data
+    \item Controller lifecycle managed externally (manual start/stop)
+    \item Network monitors run independently of backend
+    \item Decoupled architecture allows independent agent operation
 \end{itemize}
 
 \subsection{Error Handling and Recovery}
 
-Comprehensive error handling ensures system resilience:
+Error handling is implemented at each system layer:
 
+\textbf{Frontend Error Handling:}
 \begin{itemize}
-    \item \textbf{Network Errors:} Automatic retry with exponential backoff and user notification
-    \item \textbf{Backend Errors:} Graceful degradation and error message display
-    \item \textbf{Agent Failures:} Automatic agent restart and state recovery
-    \item \textbf{Database Errors:} Transaction rollback and error logging
-    \item \textbf{Validation Errors:} Clear user feedback with correction guidance
+    \item Try-catch blocks around fetch() calls
+    \item User-facing error messages for network failures
+    \item Conditional rendering when backend unavailable
+    \item Console logging for debugging purposes
+    \item No automatic retry (user must manually refresh)
+\end{itemize}
+
+\textbf{Backend Error Handling:}
+\begin{itemize}
+    \item HTTP status codes: 200 OK, 400 Bad Request, 500 Internal Server Error
+    \item JSON error responses with descriptive messages
+    \item GORM transaction rollback on database errors
+    \item Logging via Echo framework middleware
+    \item CORS errors handled through middleware configuration
+\end{itemize}
+
+\textbf{Agent Error Handling:}
+\begin{itemize}
+    \item Frida exceptions caught and logged by controller
+    \item Network monitor errors logged to console
+    \item HTTP POST failures retry with exponential backoff
+    \item Agent crashes detected by controller, restart not automated
+    \item Batch data preserved in memory on send failure
+\end{itemize}
+
+\textbf{Database Error Handling:}
+\begin{itemize}
+    \item GORM AutoMigrate handles schema changes
+    \item Connection pool manages PostgreSQL connections
+    \item Constraint violations return descriptive errors
+    \item Transaction rollback on any error in multi-operation requests
 \end{itemize}
 
 \subsection{Data Flow Coordination}
 
-Data flows through the system following established patterns:
+Data flows through the system in a unidirectional pattern:
 
 \begin{enumerate}
-    \item Agents capture events through instrumentation hooks
-    \item Events are validated, formatted, and batched
-    \item Batches transmitted to backend via HTTP POST
-    \item Backend validates, processes, and stores events in database
-    \item Frontend polls backend for new events
-    \item Events retrieved with pagination and filtering
-    \item UI updates with new event data
-    \item User interactions trigger control commands flowing back through the system
+    \item User uploads executable via frontend file input
+    \item Frontend creates session via POST /api/create-session
+    \item Backend creates Session record in PostgreSQL, returns session ID
+    \item User starts monitoring via frontend button
+    \item Frontend sends POST /api/start-monitor with session ID and PID
+    \item Backend (future implementation) would trigger controller startup
+    \item Currently: Controller started manually, session ID provided via argument
+    \item Frida agent captures events through API hooks
+    \item Events batched (10-50 events or 2-second timeout)
+    \item Agent POSTs batch to /api/events/events with session ID
+    \item Backend validates and stores via GORM: db.Create(\&event)
+    \item Frontend polls GET /api/events/:sessionId every 2 seconds
+    \item Backend queries: db.Where("session\_id = ?", sessionId).Find(\&events)
+    \item Frontend updates event tables with new data
+    \item Process continues until user clicks Stop
+    \item Frontend sends POST /api/monitor/stop
+    \item Controller terminates Frida session
 \end{enumerate}
+
+\textbf{Network Monitor Data Flow:}
+\begin{itemize}
+    \item HTTP interceptor captures traffic via mitmproxy addon
+    \item Formats HTTP requests/responses as event JSON
+    \item POSTs to /api/http/events
+    \item Net interceptor captures packets via tshark subprocess
+    \item Formats network packets as event JSON
+    \item POSTs to /api/net/events
+    \item Both follow same storage and retrieval pattern as Frida events
+\end{itemize}
 
 \subsection{Performance Optimization}
 
-Several optimizations ensure system responsiveness:
+Performance optimizations are implemented across system components:
 
+\textbf{Frontend Optimizations:}
 \begin{itemize}
-    \item \textbf{Frontend:} Virtual scrolling, lazy loading, memoization, code splitting
-    \item \textbf{Backend:} Connection pooling, query optimization, response caching
-    \item \textbf{Agents:} Event batching, selective monitoring, resource limits
-    \item \textbf{Database:} Indexing, query optimization, connection pooling
-    \item \textbf{Network:} HTTP compression, request batching, persistent connections
+    \item React.memo() for preventing unnecessary component re-renders
+    \item useEffect dependencies carefully managed to avoid infinite loops
+    \item Conditional event fetching (only when monitoring active)
+    \item Event list maintained in state, appended rather than replaced
+    \item Vite build system provides fast development and optimized production builds
+    \item Code splitting through dynamic imports (planned, not yet implemented)
+\end{itemize}
+
+\textbf{Backend Optimizations:}
+\begin{itemize}
+    \item GORM connection pooling for PostgreSQL (default 10 max connections)
+    \item Batch event insertion using db.Create(\&events) for multiple records
+    \item JSONB columns for flexible event data without schema migrations
+    \item Indexed columns: session\_id, timestamp for fast queries
+    \item Echo framework's lightweight routing and middleware
+    \item No caching implemented (all requests query database directly)
+\end{itemize}
+
+\textbf{Agent Optimizations:}
+\begin{itemize}
+    \item Event batching: 10-50 events or 2-second timeout threshold
+    \item Selective API hooking (only monitored operations instrumented)
+    \item In-memory event storage before transmission
+    \item Single HTTP connection reused for multiple POST requests
+    \item Frida's efficient native code instrumentation
+    \item Network monitors filter out non-relevant traffic
+\end{itemize}
+
+\textbf{Database Optimizations:}
+\begin{itemize}
+    \item PostgreSQL JSONB indexing for event data queries
+    \item GIN indexes on JSONB columns for fast JSON key lookups
+    \item Primary key indexes on Sessions and Events tables
+    \item Foreign key indexes on event.session\_id for join queries
+    \item GORM's prepared statement caching
+    \item No current pagination (all events returned per request)
+\end{itemize}
+
+\textbf{Network Optimizations:}
+\begin{itemize}
+    \item HTTP/1.1 keep-alive connections
+    \item JSON compression (not yet implemented)
+    \item Batch POST requests reduce network round trips
+    \item Local deployment eliminates WAN latency
+    \item WebSocket for noVNC provides low-latency VNC streaming
+\end{itemize}
+
+\textbf{Areas for Future Optimization:}
+\begin{itemize}
+    \item Implement pagination for event retrieval (currently all events fetched)
+    \item Add response caching for session metadata
+    \item Implement virtual scrolling for large event tables
+    \item Enable gzip compression on backend responses
+    \item Add database query result caching
+    \item Implement incremental event fetching (only new events since last poll)
 \end{itemize}
 
 \subsection{Security Considerations}
 
-Security measures protect the system and monitored data:
+Security implementation in the current system is minimal due to local deployment:
 
+\textbf{Current Security Measures:}
 \begin{itemize}
-    \item HTTPS for all communication between components
-    \item Input validation and sanitization at all entry points
-    \item SQL injection prevention through parameterized queries
-    \item Cross-site scripting (XSS) prevention through output encoding
-    \item Session token management for authentication (future enhancement)
-    \item Access control for sensitive operations
-    \item Audit logging of all administrative actions
+    \item CORS enabled on backend for cross-origin requests from frontend
+    \item Local-only deployment (localhost) limits network exposure
+    \item GORM parameterized queries prevent SQL injection
+    \item PostgreSQL password authentication for database access
+    \item No public internet exposure (development environment only)
 \end{itemize}
 
-This implementation provides a robust, scalable, and maintainable system for real-time system monitoring. The modular architecture facilitates testing, debugging, and future enhancements while the comprehensive error handling ensures reliability in production environments.
+\textbf{Security Limitations:}
+\begin{itemize}
+    \item No HTTPS (HTTP only on localhost:8080)
+    \item No authentication or authorization mechanisms
+    \item No input validation on backend endpoints
+    \item No rate limiting or DDoS protection
+    \item No session token management
+    \item No output encoding for XSS prevention
+    \item No audit logging of operations
+    \item WebSocket connection to noVNC is unencrypted
+\end{itemize}
+
+\textbf{Security Assumptions:}
+\begin{itemize}
+    \item System runs in trusted local environment
+    \item Single-user system (no multi-tenancy)
+    \item Network access limited to localhost
+    \item Database accessible only locally
+    \item Malware analysis inherently involves running untrusted code
+    \item VM isolation provides primary security boundary
+\end{itemize}
+
+\textbf{Future Security Enhancements:}
+\begin{itemize}
+    \item Implement JWT-based authentication for API access
+    \item Add input validation using Go struct tags and validation library
+    \item Enable HTTPS with self-signed certificates for encrypted communication
+    \item Implement role-based access control (RBAC) for multi-user support
+    \item Add audit logging for all data modifications
+    \item Implement rate limiting to prevent abuse
+    \item Sanitize user inputs to prevent XSS in frontend
+    \item Add CSRF token protection for state-changing operations
+\end{itemize}
+
+\textbf{VM Security:}
+\begin{itemize}
+    \item Virtual machine provides isolation for malware execution
+    \item Snapshots allow restoration to clean state after analysis
+    \item No shared folders or clipboard between host and VM (recommended)
+    \item Network isolation or controlled internet access for VM
+    \item VNC provides safe remote interaction without direct host exposure
+\end{itemize}
+
+\section{Summary}
+
+This chapter detailed the implementation of OS-Pulse's three core components: the multi-agent monitoring system, the Go-based backend with PostgreSQL storage, and the React-based frontend dashboard.
+
+The agent implementation showcases practical dynamic instrumentation using Frida for API-level monitoring, mitmproxy for HTTP traffic analysis, and tshark for raw network packet capture. Event batching and selective hooking optimize performance while capturing comprehensive behavioral data.
+
+The backend provides a lightweight RESTful API using Echo framework and GORM ORM, with JSONB columns enabling flexible event storage without rigid schema constraints. Automatic migrations and connection pooling ensure database reliability and performance.
+
+The frontend delivers an intuitive monitoring interface with split-screen layout combining noVNC for VM interaction and real-time event tables for behavioral analysis. Polling-based updates, automatic zoom control, and tabbed event organization create a smooth user experience.
+
+Integration between components follows a unidirectional data flow: agents capture events, POST to backend, backend stores in PostgreSQL, frontend polls for updates. This simple architecture prioritizes reliability and debuggability over complexity.
+
+While security is minimal in the current local deployment, the system successfully demonstrates real-time malware behavior monitoring with practical visualizations for forensic analysis. The modular design facilitates future enhancements including authentication, pagination, caching, and production hardening.

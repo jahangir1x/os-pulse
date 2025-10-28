@@ -33,241 +33,300 @@ Unit testing focused on validating individual components in isolation, ensuring 
 
 \subsection{Backend Unit Tests}
 
-The Go backend components were tested using the standard testing package and testify assertion library. Key areas of unit testing included:
+The Go backend currently has limited automated testing. Manual testing was the primary validation method:
 
-\textbf{Repository Layer Testing:}
+\textbf{API Endpoint Testing:}
 \begin{itemize}
-    \item Database CRUD operations for sessions and events
-    \item Query performance with various filtering parameters
-    \item Error handling for database connection failures
-    \item Transaction rollback behavior
+    \item Manual testing using Postman or curl commands
+    \item Verification of session creation and event storage
+    \item Database state validation through PostgreSQL client
+    \item CORS configuration tested with frontend integration
 \end{itemize}
 
-\textbf{Service Layer Testing:}
+\textbf{Areas Without Automated Tests:}
 \begin{itemize}
-    \item Business logic validation for session management
-    \item Event processing and transformation logic
-    \item Input validation and sanitization
-    \item Edge case handling for malformed data
+    \item GORM model validation and relationships
+    \item Handler logic for edge cases
+    \item Error handling paths
+    \item Concurrency handling for simultaneous requests
 \end{itemize}
 
-Test coverage for the backend achieved approximately 75\% code coverage, with critical path coverage exceeding 90\%.
+Note: Automated unit tests for the Go backend are planned but not yet implemented.
 
 \subsection{Frontend Unit Tests}
 
-React components were tested using Jest and React Testing Library, focusing on:
+The React frontend currently has no automated tests implemented:
 
 \begin{itemize}
-    \item Component rendering with various prop combinations
-    \item User interaction handling (clicks, form submissions)
-    \item State management and updates
-    \item Error boundary behavior
+    \item Manual browser testing for UI interactions
+    \item Developer console inspection for errors
+    \item Network tab validation of API requests
+    \item Visual inspection of component rendering
 \end{itemize}
 
-Key test cases included session creation flow, event table rendering with pagination, and filter functionality.
+Planned testing approach would use:
+\begin{itemize}
+    \item Jest for JavaScript testing framework
+    \item React Testing Library for component testing
+    \item Focus on critical user workflows (upload, start/stop monitoring, event display)
+\end{itemize}
 
 \subsection{Agent Unit Tests}
 
-Agent components written in Python and TypeScript underwent specialized testing:
+Python agent controller has basic test files for API integration:
 
+\textbf{Existing Test Files:}
 \begin{itemize}
-    \item API hooking accuracy for file operations
-    \item Network packet parsing correctness
-    \item Event serialization and deserialization
-    \item Memory leak detection during extended monitoring
+    \item test\_controller.py: Basic controller initialization tests
+    \item test\_api.py: API endpoint connectivity tests
+    \item test\_api\_integration.py: End-to-end API integration tests
+    \item test\_api\_server.py: Mock API server for testing
+    \item test\_webhook\_integration.py: Webhook endpoint testing
 \end{itemize}
+
+\textbf{Test Coverage:}
+\begin{itemize}
+    \item Controller initialization and argument parsing
+    \item API endpoint connectivity and response validation
+    \item Event posting to backend endpoints
+    \item Basic error handling scenarios
+
 
 \section{Integration Testing}
 
-Integration testing validated the interactions between different system components and external dependencies.
+Integration testing validated interactions between system components through manual testing and basic automated scripts.
 
 \subsection{API Integration Tests}
 
-REST API endpoints were tested using automated HTTP request scenarios:
+Python test files provide basic API integration validation:
 
+\textbf{test\_api\_integration.py:}
 \begin{itemize}
-    \item \textbf{Session Management API}: Create, retrieve, update, and delete operations
-    \item \textbf{Event API}: Event creation, retrieval with pagination and filtering
-    \item \textbf{File Upload API}: Multipart form data handling and validation
-    \item \textbf{Agent Communication API}: Command execution and status reporting
+    \item Tests POST requests to /api/events/events endpoint
+    \item Validates event storage in PostgreSQL database
+    \item Checks JSON payload formatting and response codes
+    \item Verifies session ID linking for events
 \end{itemize}
 
-Test cases verified correct HTTP status codes, response payloads, error handling, and database state changes.
+\textbf{test\_webhook\_integration.py:}
+\begin{itemize}
+    \item Tests HTTP POST to backend webhook endpoints
+    \item Validates payload delivery and processing
+    \item Checks error handling for malformed requests
+\end{itemize}
+
+\textbf{Manual API Testing:}
+\begin{itemize}
+    \item Session creation through frontend UI
+    \item Event retrieval via GET /api/events/:sessionId
+    \item Monitoring start/stop through MonitoringControls component
+    \item Cross-component data flow validation (agent → backend → frontend)
+\end{itemize}
 
 \subsection{Database Integration Tests}
 
-Database integration tests validated:
+Database integration validated through:
 
 \begin{itemize}
-    \item GORM model mapping and migrations
-    \item Foreign key constraint enforcement
-    \item JSONB query performance for event data
-    \item Transaction isolation levels
-    \item Connection pool behavior under concurrent access
+    \item GORM AutoMigrate creating schema on startup
+    \item Direct PostgreSQL queries to verify event storage
+    \item Session and event relationship validation
+    \item JSONB column data integrity checks
+    \item Connection pooling under load (manual observation)
 \end{itemize}
+
+No automated database integration test suite exists currently.
 
 \subsection{Agent-Backend Integration}
 
-Integration between monitoring agents and backend API was tested through:
+Integration between monitoring agents and backend API tested manually:
 
 \begin{itemize}
-    \item Agent registration and heartbeat mechanisms
-    \item Event data transmission with large payloads
-    \item File upload from agent to backend
-    \item Error recovery and retry logic
+    \item Controller sending Frida events to /api/events/events
+    \item HTTP interceptor sending traffic data to /api/http/events
+    \item Network monitor sending packet data to /api/net/events
+    \item Backend successfully storing events from all agent types
+    \item JSON payload validation and error responses
+    \item Event retrieval through frontend polling mechanism
+\end{itemize}
+
+\textbf{Validation Methods:}
+\begin{itemize}
+    \item Database queries to verify event storage
+    \item Console logging for debugging event flow
+    \item Network tab in browser dev tools for API calls
+    \item PostgreSQL client for direct database inspection
 \end{itemize}
 
 \section{System Testing}
 
-System testing evaluated complete end-to-end workflows from user interface through to data persistence.
+System testing evaluated complete end-to-end workflows through manual execution and observation.
 
 \subsection{Functional System Tests}
 
-Complete user workflows were tested:
+Complete user workflows tested manually:
 
 \begin{enumerate}
     \item \textbf{Sample Upload and Execution Workflow}:
     \begin{itemize}
-        \item User uploads suspicious executable
-        \item System creates monitoring session
-        \item Agent receives file and prepares environment
-        \item User executes sample in virtual machine
-        \item Events are captured and displayed in real-time
+        \item User uploads Windows executable through frontend
+        \item Frontend creates session via POST /api/create-session
+        \item User manually starts controller with session ID and PID
+        \item Sample executes in VM (accessed via noVNC)
+        \item Events captured by Frida hooks and sent to backend
+        \item Frontend polls and displays events in real-time tables
     \end{itemize}
     
     \item \textbf{Event Monitoring and Analysis Workflow}:
     \begin{itemize}
-        \item Start monitoring session
-        \item Trigger various system events (file operations, process creation, network activity)
-        \item Verify event capture accuracy and completeness
-        \item Test filtering and search functionality
-        \item Validate data export capabilities
+        \item Start monitoring by clicking Start button in UI
+        \item Interact with application in VM (file operations, network requests)
+        \item Observe file events appear in File Operations tab
+        \item Check process events in Process Events tab
+        \item Verify network activity in Network Activity tab
+        \item Validate event data accuracy against actual operations
     \end{itemize}
     
     \item \textbf{Session Management Workflow}:
     \begin{itemize}
-        \item Create multiple concurrent sessions
-        \item Pause and resume monitoring
-        \item Stop sessions and verify data persistence
-        \item Session cleanup and resource deallocation
+        \item Create session through file upload
+        \item Start monitoring for specific PID
+        \item Stop monitoring via Stop button
+        \item Verify events persist after monitoring stops
+        \item Session data retrievable through GET /api/events/:sessionId
+    \end{itemize}
+
+    \item \textbf{noVNC Integration Workflow}:
+    \begin{itemize}
+        \item Access VM through embedded noVNC iframe
+        \item Verify keyboard and mouse input forwarding
+        \item Test zoom adjustment (automatic 50\% on monitoring start)
+        \item Confirm split-screen layout with events side-by-side
     \end{itemize}
 \end{enumerate}
 
 \subsection{Compatibility Testing}
 
-The system was tested across different environments:
+The system was tested in a limited development environment:
 
 \begin{itemize}
-    \item \textbf{Windows Versions}: Windows 10 (20H2, 21H1, 21H2), Windows 11
-    \item \textbf{Browsers}: Chrome 120+, Firefox 115+, Edge 120+
-    \item \textbf{Screen Resolutions}: 1920x1080, 1366x768, mobile responsive views
+    \item \textbf{Windows Version}: Windows 10/11 (host and VM)
+    \item \textbf{Browsers}: Primarily Chrome/Edge (Chromium-based), limited Firefox testing
+    \item \textbf{Screen Resolutions}: 1920x1080 and 2560x1440 (desktop-optimized)
+    \item \textbf{Python Version}: Python 3.8+ for agents
+    \item \textbf{Go Version}: Go 1.21+ for backend
+    \item \textbf{Node Version}: Node.js 18+ for frontend
+    \item \textbf{PostgreSQL Version}: PostgreSQL 14+
+\end{itemize}
+
+\textbf{Limited Mobile Support:}
+\begin{itemize}
+    \item Frontend not optimized for mobile devices
+    \item Primary focus on desktop/laptop usage
+    \item Responsive design partially implemented via Tailwind
 \end{itemize}
 
 \subsection{Security Testing}
 
-Security validation included:
+Security validation was minimal due to local development focus:
 
 \begin{itemize}
-    \item Input validation for SQL injection prevention
-    \item File upload security (malicious file handling)
-    \item Session isolation verification
-    \item API authentication and authorization (if implemented)
+    \item No formal security testing conducted
+    \item GORM parameterized queries provide basic SQL injection protection
+    \item No authentication/authorization to test
+    \item File upload accepts any file type (intentional for malware analysis)
+    \item System assumes trusted local environment
+    \item VM isolation provides primary security boundary
 \end{itemize}
 
 \section{Performance Testing}
 
-Performance testing evaluated system behavior under various load conditions and resource constraints.
+Performance testing was observational rather than systematic, focused on basic usability validation.
 
-\subsection{Load Testing Scenarios}
+\subsection{Manual Performance Observations}
 
-\textbf{High-Frequency Event Generation:}
+\textbf{Event Capture Performance:}
 \begin{itemize}
-    \item Generated 1,000+ events per second through intensive file operations
-    \item Monitored agent CPU usage: 15-25\% with default configuration
-    \item Backend processing latency: 50-100ms per event batch
-    \item Database write throughput: 500-800 events/second
+    \item Frida hooks capture events with minimal visible latency
+    \item File operations monitored without noticeable application slowdown
+    \item Network monitoring operates in background without UI impact
+    \item No formal benchmarks or metrics collected
 \end{itemize}
 
-\textbf{Concurrent Session Testing:}
+\textbf{Frontend Responsiveness:}
 \begin{itemize}
-    \item Simulated 5 concurrent monitoring sessions
-    \item Verified session isolation and data integrity
-    \item Database connection pool utilization remained below 70\%
+    \item UI remains responsive with hundreds of events displayed
+    \item Event polling every 2 seconds does not cause UI freezing
+    \item noVNC iframe provides acceptable VM interaction latency
+    \item No testing with thousands of events (potential performance issue)
 \end{itemize}
 
-\subsection{Performance Metrics}
-
-Key performance indicators measured:
-
-\begin{table}[h]
-\centering
-\begin{tabular}{|l|l|}
-\hline
-\textbf{Metric} & \textbf{Result} \\
-\hline
-Event Capture Latency & $< 2$ seconds \\
-API Response Time (avg) & 45ms \\
-Database Query Time (avg) & 12ms \\
-Frontend Render Time & $< 100$ms \\
-Agent Memory Usage & 80-150MB \\
-Backend Memory Usage & 200-300MB \\
-\hline
-\end{tabular}
-\caption{System Performance Metrics}
-\end{table}
-
-\subsection{Stress Testing}
-
-The system was subjected to stress conditions:
-
+\textbf{Database Performance:}
 \begin{itemize}
-    \item \textbf{Extended Monitoring Duration}: 2-hour continuous monitoring session with consistent performance
-    \item \textbf{Large File Operations}: Monitoring applications performing 10GB+ file transfers
-    \item \textbf{High Process Creation Rate}: Monitoring rapid process spawning (50+ processes/minute)
+    \item Event storage appears instantaneous for typical workloads
+    \item Event retrieval fast for sessions with <1000 events
+    \item No testing of large-scale event storage (10,000+ events)
+    \item Connection pooling configured but not stress-tested
 \end{itemize}
 
-\subsection{Resource Utilization Analysis}
-
-Resource consumption was monitored:
+\subsection{Performance Limitations Identified}
 
 \begin{itemize}
-    \item \textbf{CPU Usage}: Agent processes consumed 10-20\% during normal monitoring, peaking at 35\% during intensive operations
-    \item \textbf{Memory Usage}: Stable memory footprint with no memory leaks detected over 2-hour sessions
-    \item \textbf{Disk I/O}: Database writes averaged 5-10 MB/s during high-activity monitoring
-    \item \textbf{Network Bandwidth}: Agent-to-backend communication averaged 100-500 KB/s
+    \item No pagination: All events fetched on every poll
+    \item No incremental updates: Entire event list returned each request
+    \item Event tables may slow with large datasets
+    \item No virtual scrolling for large event lists
+    \item Backend lacks response caching
+    \item No load testing performed
+    \item No concurrency testing beyond basic multi-tab usage
 \end{itemize}
 
 \section{Results and Analysis}
 
-\subsection{Test Coverage Summary}
+\subsection{Testing Summary}
 
-Overall test coverage across the system:
+The testing approach was primarily manual and informal:
 
-\begin{table}[h]
-\centering
-\begin{tabular}{|l|c|}
-\hline
-\textbf{Component} & \textbf{Coverage} \\
-\hline
-Backend Services & 78\% \\
-Backend Handlers & 82\% \\
-Frontend Components & 65\% \\
-Agent Core Logic & 70\% \\
-\textbf{Overall Average} & \textbf{73\%} \\
-\hline
-\end{tabular}
-\caption{Code Coverage by Component}
-\end{table}
+\textbf{Test Coverage:}
+\begin{itemize}
+    \item Backend: Basic automated tests in Python agent (test\_api\_integration.py, test\_controller.py)
+    \item Frontend: No automated tests, manual browser testing only
+    \item Agents: Limited Python unit tests, mostly manual validation
+    \item Integration: Manual end-to-end workflow testing
+    \item No formal code coverage metrics collected
+\end{itemize}
 
-\subsection{Defect Analysis}
+\textbf{Testing Strengths:}
+\begin{itemize}
+    \item Core workflows validated through repeated manual execution
+    \item API integration tested with basic Python scripts
+    \item Real-world usage scenarios tested during development
+    \item Database integrity verified through direct queries
+\end{itemize}
 
-During testing, 47 defects were identified and classified:
+\textbf{Testing Weaknesses:}
+\begin{itemize}
+    \item Lack of comprehensive automated test suite
+    \item No performance benchmarks or metrics
+    \item Limited edge case testing
+    \item No CI/CD pipeline for automated testing
+    \item Minimal security testing
+    \item No formal test documentation
+\end{itemize}
+
+\subsection{Known Issues and Limitations}
+
+Issues identified during testing but not yet resolved:
 
 \begin{itemize}
-    \item \textbf{Critical (3)}: System crashes under specific race conditions - all resolved
-    \item \textbf{High (12)}: Data loss or incorrect event capture - 11 resolved, 1 documented limitation
-    \item \textbf{Medium (18)}: UI inconsistencies or minor functional issues - all resolved
-    \item \textbf{Low (14)}: Cosmetic issues or enhancement suggestions - 10 resolved, 4 deferred
+    \item No pagination for large event sets (potential UI slowdown)
+    \item Frontend fetches all events on every poll (inefficient)
+    \item No error handling for backend disconnection
+    \item No validation of user inputs in frontend
+    \item Controller must be started manually (not automated via backend)
+    \item No session cleanup or deletion functionality
+    \item Limited error messages for user guidance
+    \item No loading states for API requests
 \end{itemize}
 
 \subsection{Testing Challenges}
@@ -283,24 +342,43 @@ Several challenges were encountered:
 
 \subsection{Quality Assurance Measures}
 
-Additional quality measures implemented:
+Challenges encountered during testing:
 
 \begin{itemize}
-    \item \textbf{Code Reviews}: All code changes reviewed by peers before integration
-    \item \textbf{Static Analysis}: Go vet and ESLint for code quality enforcement
-    \item \textbf{Continuous Integration}: Automated test execution on code commits
-    \item \textbf{Documentation Standards}: Comprehensive inline documentation and API specifications
+    \item Testing Frida hooks requires actual Windows applications to monitor
+    \item Reproducing specific malware behaviors difficult without real samples
+    \item Manual testing time-consuming for repetitive workflows
+    \item Debugging distributed system (agents + backend + frontend) complex
+    \item Database state inspection requires direct PostgreSQL queries
+    \item No automated test infrastructure increases regression risk
 \end{itemize}
 
-\subsection{Test Automation}
+\subsection{Quality Assurance Practices}
 
-Test automation coverage:
+Informal quality measures implemented:
 
 \begin{itemize}
-    \item 95\% of unit tests automated
-    \item 80\% of integration tests automated
-    \item 60\% of system tests automated (remaining require manual validation)
-    \item Performance tests fully automated with scripted load generation
+    \item Manual code review before integrating new features
+    \item Console logging for debugging and error tracking
+    \item Browser dev tools for frontend debugging
+    \item PostgreSQL client for database state validation
+    \item Version control with Git for code history
 \end{itemize}
 
-The comprehensive testing strategy ensured that OS-Pulse meets its functional requirements while maintaining acceptable performance characteristics. The identified defects were systematically addressed, and the remaining known limitations are documented for future enhancement.
+\textbf{Lacking Quality Measures:}
+\begin{itemize}
+    \item No formal code review process
+    \item No static analysis tools configured (Go vet, ESLint unused)
+    \item No continuous integration pipeline
+    \item No automated test execution on commits
+    \item Minimal inline documentation
+    \item No formal API specifications
+\end{itemize}
+
+\section{Conclusion}
+
+The testing and validation of OS-Pulse relied primarily on manual testing and informal quality assurance. While core workflows were validated through repeated execution, the lack of comprehensive automated testing leaves gaps in coverage and increases the risk of regressions.
+
+The basic Python integration tests provide some automated validation of agent-backend communication, but frontend testing is entirely manual. Performance characteristics were observed informally but not systematically measured or benchmarked.
+
+For a research and development system, this testing approach was sufficient to validate core functionality and demonstrate the concept. However, production deployment would require implementing comprehensive automated testing, formal performance benchmarking, security audits, and continuous integration practices.
