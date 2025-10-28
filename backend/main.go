@@ -66,7 +66,9 @@ func main() {
 	e.GET("/api/monitor-modes", frontendHandler.GetMonitorModes)
 	e.POST("/api/start-monitor", frontendHandler.StartMonitor)
 	e.POST("/api/monitor/stop", frontendHandler.StopMonitor)
-	e.GET("/api/events/:sessionId", frontendHandler.GetEvents)
+
+	// Event retrieval endpoints (batch-based, no session required)
+	e.GET("/api/events/:sessionId", frontendHandler.GetEvents) // Get unsent events in batches
 	e.POST("/api/list-processes", frontendHandler.ListProcesses)
 
 	// Start server

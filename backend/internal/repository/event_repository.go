@@ -25,11 +25,12 @@ func (r *EventRepository) CreateEvent(event *models.Event) error {
 	return nil
 }
 
-func (r *EventRepository) GetUnsentEventsBySession(sessionID string, limit int) ([]*models.Event, error) {
+// GetUnsentEvents retrieves unsent events in batches
+func (r *EventRepository) GetUnsentEvents(limit int) ([]*models.Event, error) {
 	var events []*models.Event
 
-	result := r.db.Where("session_id = ? AND is_sent = ?", sessionID, false).
-		Order("timestamp DESC").
+	result := r.db.Where("is_sent = ?", false).
+		Order("timestamp ASC").
 		Limit(limit).
 		Find(&events)
 
@@ -40,17 +41,30 @@ func (r *EventRepository) GetUnsentEventsBySession(sessionID string, limit int) 
 	return events, nil
 }
 
-func (r *EventRepository) GetEventsBySessionInTimeRange(sessionID string, startTime, endTime *time.Time, limit int) ([]*models.Event, error) {
+// GetEventsByTimeRange retrieves events within a time range
+func (r *EventRepository) GetEventsByTimeRange(startTime, endTime time.Time, limit int) ([]*models.Event, error) {
 	var events []*models.Event
-	query := r.db.Where("session_id = ? AND is_sent = ?", sessionID, false)
 
-	if startTime != nil && endTime != nil {
-		query = query.Where("timestamp BETWEEN ? AND ?", startTime, endTime)
-	} else if startTime != nil {
-		query = query.Where("timestamp >= ?", startTime)
+	result := r.db.Where("timestamp BETWEEN ? AND ?", startTime, endTime).
+		Order("timestamp ASC").
+		Limit(limit).
+		Find(&events)
+
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to query events: %w", result.Error)
 	}
 
-	result := query.Order("timestamp DESC").Limit(limit).Find(&events)
+	return events, nil
+}
+
+// GetAllEvents retrieves all events with pagination
+func (r *EventRepository) GetAllEvents(offset, limit int) ([]*models.Event, error) {
+	var events []*models.Event
+
+	result := r.db.Order("timestamp DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&events)
 
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to query events: %w", result.Error)
@@ -72,6 +86,26 @@ func (r *EventRepository) MarkEventsAsSent(eventIDs []uint64) error {
 	return nil
 }
 
+// CountUnsentEvents returns the total count of unsent events
+func (r *EventRepository) CountUnsentEvents() (int64, error) {
+	var count int64
+	result := r.db.Model(&models.Event{}).Where("is_sent = ?", false).Count(&count)
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to count unsent events: %w", result.Error)
+	}
+	return count, nil
+}
+
+// CountAllEvents returns the total count of all events
+func (r *EventRepository) CountAllEvents() (int64, error) {
+	var count int64
+	result := r.db.Model(&models.Event{}).Count(&count)
+	if result.Error != nil {
+		return 0, fmt.Errorf("failed to count events: %w", result.Error)
+	}
+	return count, nil
+}
+
 func (r *EventRepository) CreateHTTPEvent(sessionID string, httpEvent *models.HTTPEvent) error {
 	// Convert HTTP event to JSONB
 	eventData := datatypes.JSON{}
@@ -80,7 +114,7 @@ func (r *EventRepository) CreateHTTPEvent(sessionID string, httpEvent *models.HT
 	}
 
 	event := &models.Event{
-		SessionID: sessionID,
+		SessionID: sessionID, // Optional, can be empty
 		EventType: "http_network_operation",
 		Timestamp: time.UnixMilli(httpEvent.TimestampMS),
 		Source:    "http-interceptor",
@@ -100,7 +134,7 @@ func (r *EventRepository) CreateNetworkEvents(sessionID string, networkEvent *mo
 		}
 
 		event := &models.Event{
-			SessionID: sessionID,
+			SessionID: sessionID, // Optional, can be empty
 			EventType: "raw_network_operation",
 			Timestamp: time.Unix(int64(netEvent.Timestamp), 0),
 			Source:    "network-interceptor",

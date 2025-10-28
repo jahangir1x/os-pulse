@@ -35,23 +35,11 @@ func (s *EventService) CreateEvent(event *models.Event) error {
 	return s.eventRepo.CreateEvent(event)
 }
 
-func (s *EventService) GetEventsForSession(sessionID string, limit int) ([]*models.Event, error) {
-	// Get session to check monitoring time range
-	session, err := s.sessionRepo.GetSessionByID(sessionID)
+// GetUnsentEvents retrieves unsent events in batches
+func (s *EventService) GetUnsentEvents(limit int) ([]*models.Event, error) {
+	events, err := s.eventRepo.GetUnsentEvents(limit)
 	if err != nil {
-		// If session doesn't exist, return empty events
-		return []*models.Event{}, nil
-	}
-
-	// Get events in the monitoring time range
-	events, err := s.eventRepo.GetEventsBySessionInTimeRange(
-		sessionID,
-		session.MonitoringStarted,
-		session.MonitoringEnded,
-		limit,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get events: %w", err)
+		return nil, fmt.Errorf("failed to get unsent events: %w", err)
 	}
 
 	// Mark events as sent if any were returned
@@ -68,6 +56,35 @@ func (s *EventService) GetEventsForSession(sessionID string, limit int) ([]*mode
 	}
 
 	return events, nil
+}
+
+// GetEventsByTimeRange retrieves events within a time range
+func (s *EventService) GetEventsByTimeRange(startTime, endTime time.Time, limit int) ([]*models.Event, error) {
+	return s.eventRepo.GetEventsByTimeRange(startTime, endTime, limit)
+}
+
+// GetAllEvents retrieves all events with pagination
+func (s *EventService) GetAllEvents(offset, limit int) ([]*models.Event, error) {
+	return s.eventRepo.GetAllEvents(offset, limit)
+}
+
+// GetEventStats returns statistics about events
+func (s *EventService) GetEventStats() (map[string]interface{}, error) {
+	unsentCount, err := s.eventRepo.CountUnsentEvents()
+	if err != nil {
+		return nil, fmt.Errorf("failed to count unsent events: %w", err)
+	}
+
+	totalCount, err := s.eventRepo.CountAllEvents()
+	if err != nil {
+		return nil, fmt.Errorf("failed to count total events: %w", err)
+	}
+
+	return map[string]interface{}{
+		"total_events":  totalCount,
+		"unsent_events": unsentCount,
+		"sent_events":   totalCount - unsentCount,
+	}, nil
 }
 
 func (s *EventService) CreateHTTPEvent(sessionID string, httpEvent *models.HTTPEvent) error {

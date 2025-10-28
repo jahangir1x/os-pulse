@@ -3,6 +3,7 @@ package handlers
 import (
 	"io"
 	"net/http"
+	"strconv"
 
 	"os-pulse-backend/internal/models"
 	"os-pulse-backend/internal/service"
@@ -83,13 +84,16 @@ func (h *FrontendHandler) StopMonitor(c echo.Context) error {
 }
 
 func (h *FrontendHandler) GetEvents(c echo.Context) error {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Session ID is required"})
+	// Get limit from query parameter (default 10)
+	limit := 10
+	if limitStr := c.QueryParam("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
 	}
 
-	// Get 10 events at a time
-	events, err := h.eventService.GetEventsForSession(sessionID, 10)
+	// Get unsent events in batch
+	events, err := h.eventService.GetUnsentEvents(limit)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get events"})
 	}
@@ -98,8 +102,12 @@ func (h *FrontendHandler) GetEvents(c echo.Context) error {
 	frontendEvents := make([]map[string]interface{}, len(events))
 	for i, event := range events {
 		frontendEvents[i] = map[string]interface{}{
+			"id":         event.ID,
 			"event_type": event.EventType,
+			"timestamp":  event.Timestamp,
+			"source":     event.Source,
 			"data":       event.Data,
+			"session_id": event.SessionID,
 		}
 	}
 
