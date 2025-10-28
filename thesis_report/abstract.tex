@@ -1,0 +1,19 @@
+% Abstract
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+\onehalfspacing
+
+OS-Pulse is a comprehensive, full-stack real-time system monitoring platform designed to address the limitations of traditional monitoring tools in the domains of security research, malware analysis, and behavioral analysis. Traditional system monitoring solutions lack real-time capabilities, comprehensive data visualization, and the ability to correlate multiple data sources in a unified dashboard, creating significant gaps in security analysis workflows.
+
+This project implements a modern web-based monitoring platform that provides deep insights into system behavior through dynamic instrumentation and network monitoring capabilities. The system architecture follows a microservices pattern with three distinct tiers: a React-based presentation tier for data visualization, a Go-based application tier with PostgreSQL database for backend services, and a multi-agent data collection tier utilizing Python and TypeScript for specialized monitoring tasks.
+
+The core innovation of OS-Pulse lies in its multi-agent architecture that employs Frida-based dynamic instrumentation for non-intrusive, real-time monitoring without requiring process restarts. The platform captures and correlates file operations, network traffic, and process creation events through strategic Windows API hooking, providing security researchers with a unified view of system behavior. Key features include real-time file system operation monitoring with content preview, comprehensive process management with parent-child relationship mapping, and network activity analysis with HTTP/HTTPS traffic interception.
+
+The system implements a complete user workflow from sample upload to analysis, featuring an integrated noVNC viewer for virtual machine interaction, real-time event visualization with sub-second display latency, and flexible data export capabilities in multiple formats. The architecture ensures session isolation, secure file handling, and maintains comprehensive audit trails for security compliance.
+
+Technical implementations include a repository-service-handler layered architecture in the backend, JSONB-based flexible event storage in PostgreSQL, and a modular React component architecture with TypeScript for type safety. Performance optimizations such as database indexing, connection pooling, and selective monitoring rules ensure the platform scales effectively for enterprise deployment scenarios.
+
+The project demonstrates successful integration of modern web technologies with system-level monitoring capabilities, providing a foundation for future enhancements including cross-platform support, machine learning-based anomaly detection, and distributed monitoring capabilities. OS-Pulse represents a significant contribution to the field of system monitoring by bridging the gap between traditional desktop-based monitoring tools and modern web-based analysis platforms.
+
+\textbf{Keywords:} System Monitoring, Dynamic Instrumentation, Malware Analysis, Real-time Monitoring, Web-based Dashboard, Frida Framework, Microservices Architecture, Security Research, Behavioral Analysis, Process Monitoring

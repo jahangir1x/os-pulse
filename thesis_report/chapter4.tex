@@ -1,0 +1,1487 @@
+\chapter{System Design}
+
+This chapter presents the comprehensive design of the OS-Pulse system, detailing the architectural decisions, component interactions, and design patterns that guide the implementation. It covers the system architecture across multiple tiers, database design with entity relationships, data flow patterns, user interface design, and security considerations that ensure robust and maintainable system operation.
+
+\section{System Architecture}
+
+The architecture of OS-Pulse follows a multi-tier design pattern that separates concerns and enables independent scaling and maintenance of different system components. This section describes the overall architecture and the design of each major tier.
+
+\subsection{Overall Architecture Pattern}
+
+OS-Pulse implements a three-tier microservices architecture that separates presentation, application logic, and data collection concerns. This architectural pattern provides several advantages including scalability, maintainability, and the ability to develop and deploy components independently.
+
+\subsubsection{Architecture Overview}
+
+The system architecture consists of three primary tiers:
+
+\textbf{Tier 1: Presentation Tier}
+\begin{itemize}
+    \item React-based single-page application (SPA)
+    \item Runs entirely in the user's web browser
+    \item Communicates with backend via RESTful APIs
+    \item Provides real-time visualization of monitoring data
+    \item Handles user interactions and session management
+\end{itemize}
+
+\textbf{Tier 2: Application Tier}
+\begin{itemize}
+    \item Go-based backend server using Echo framework
+    \item RESTful API endpoints for frontend communication
+    \item Agent coordination and communication layer
+    \item Business logic and data processing
+    \item Session management and orchestration
+    \item PostgreSQL database integration
+\end{itemize}
+
+\textbf{Tier 3: Data Collection Tier}
+\begin{itemize}
+    \item Multi-agent system for specialized monitoring tasks
+    \item Controller agent for orchestration
+    \item Injector agent using Frida for dynamic instrumentation
+    \item Network monitor agent for traffic analysis
+    \item Event capture and transmission to backend
+\end{itemize}
+
+\subsubsection{Architectural Principles}
+
+The design adheres to several key architectural principles:
+
+\textbf{Separation of Concerns:} Each tier has a distinct responsibility, with clear boundaries between presentation, business logic, and data collection.
+
+\textbf{Loose Coupling:} Components communicate through well-defined interfaces (REST APIs), allowing independent modification and scaling.
+
+\textbf{High Cohesion:} Related functionality is grouped together within each component, improving maintainability.
+
+\textbf{Scalability:} The stateless backend design and database-backed storage enable horizontal scaling.
+
+\textbf{Modularity:} Each agent and service can be developed, tested, and deployed independently.
+
+\subsubsection{Communication Patterns}
+
+The system employs several communication patterns:
+
+\textbf{Request-Response Pattern:}
+\begin{itemize}
+    \item Frontend to Backend: REST API calls for session management and data retrieval
+    \item Backend to Agents: HTTP POST requests for control commands
+    \item Agents to Backend: HTTP POST requests for event submission
+\end{itemize}
+
+\textbf{Polling Pattern:}
+\begin{itemize}
+    \item Frontend polls backend at regular intervals (1-2 seconds) for new events
+    \item Ensures near real-time updates without WebSocket complexity
+    \item Configurable polling frequency based on requirements
+\end{itemize}
+
+\textbf{Event-Driven Pattern:}
+\begin{itemize}
+    \item Agents emit events as they occur on the monitored system
+    \item Backend processes and stores events asynchronously
+    \item Frontend reacts to new data through polling updates
+\end{itemize}
+
+\subsubsection{Technology Stack Integration}
+
+The architecture integrates multiple technologies across tiers:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Tier} & \textbf{Technologies} & \textbf{Purpose} \\
+\hline
+Presentation & React, TypeScript, Tailwind CSS & User Interface \\
+ & Vite, noVNC & Build tools, VM display \\
+\hline
+Application & Go 1.21+, Echo Framework & Backend server \\
+ & GORM, PostgreSQL & Data persistence \\
+\hline
+Data Collection & Python 3.8+, Frida & System monitoring \\
+ & TypeScript, Node.js & Agent scripting \\
+\hline
+\end{tabular}
+\caption{Technology Stack by Architectural Tier}
+\end{table}
+
+\subsection{Presentation Tier Design}
+
+The presentation tier provides the user interface through which users interact with the monitoring system. It is designed for responsiveness, real-time data display, and intuitive user experience.
+
+\subsubsection{Component Architecture}
+
+The frontend follows a component-based architecture using React functional components with hooks for state management:
+
+\textbf{Core Components:}
+\begin{itemize}
+    \item \texttt{Dashboard}: Main application container managing global state
+    \item \texttt{SessionManager}: Handles session creation, start, stop, and status
+    \item \texttt{EventViewer}: Displays monitoring events in organized tables
+    \item \texttt{VNCViewer}: Integrates noVNC for virtual machine interaction
+    \item \texttt{FileUploader}: Manages malware sample upload functionality
+    \item \texttt{ProcessMonitor}: Displays active processes and their relationships
+    \item \texttt{NetworkMonitor}: Visualizes network connections and traffic
+    \item \texttt{EventFilter}: Provides filtering and search capabilities
+\end{itemize}
+
+\textbf{Shared Components:}
+\begin{itemize}
+    \item \texttt{DataTable}: Reusable table component with pagination and sorting
+    \item \texttt{EventDetail}: Modal component for detailed event inspection
+    \item \texttt{StatusIndicator}: Visual indicators for monitoring state
+    \item \texttt{ExportDialog}: Interface for data export functionality
+\end{itemize}
+
+\subsubsection{State Management Strategy}
+
+The application uses React hooks for state management:
+
+\textbf{Local State (useState):}
+\begin{itemize}
+    \item Component-specific UI state (expanded rows, filters)
+    \item Form inputs and validation state
+    \item Modal visibility and dialog states
+\end{itemize}
+
+\textbf{Global State (Context API):}
+\begin{itemize}
+    \item Current session information
+    \item Monitoring status (active, paused, stopped)
+    \item User preferences and settings
+    \item Authentication state
+\end{itemize}
+
+\textbf{Server State:}
+\begin{itemize}
+    \item Monitoring events fetched from backend
+    \item Session history and metadata
+    \item Process lists and statistics
+    \item Managed through polling with local caching
+\end{itemize}
+
+\subsubsection{Data Flow in Presentation Tier}
+
+The data flow follows a unidirectional pattern:
+
+\begin{enumerate}
+    \item User action triggers event handler
+    \item Event handler updates local state or calls API
+    \item API call sends request to backend
+    \item Backend processes request and returns response
+    \item Response updates component state
+    \item React re-renders affected components
+    \item Polling mechanism continuously fetches new events
+    \item New events trigger state updates and re-renders
+\end{enumerate}
+
+\subsubsection{User Interface Layout}
+
+The dashboard uses a responsive layout design:
+
+\textbf{Header Section:}
+\begin{itemize}
+    \item Application title and logo
+    \item Session controls (Start/Stop/Pause monitoring)
+    \item File upload button
+    \item Export data button
+    \item Session information display
+\end{itemize}
+
+\textbf{Main Content Area:}
+\begin{itemize}
+    \item Left panel: noVNC viewer (50\% width when monitoring active)
+    \item Right panel: Event tables with tabs (File Ops, Processes, Network)
+    \item Resizable splitter between panels
+    \item Auto-adjusted layout based on monitoring state
+\end{itemize}
+
+\textbf{Event Display:}
+\begin{itemize}
+    \item Tabbed interface for event categories
+    \item Table view with columns: Timestamp, Type, Details, Process
+    \item Pagination controls (showing N of M events)
+    \item Filter bar with search and type selection
+    \item Row expansion for detailed event information
+\end{itemize}
+
+\subsubsection{Real-Time Update Mechanism}
+
+The frontend implements polling-based real-time updates:
+
+\begin{verbatim}
+useEffect(() => {
+    const interval = setInterval(() => {
+        if (monitoringActive) {
+            fetchNewEvents(sessionId, lastEventId);
+        }
+    }, 2000); // Poll every 2 seconds
+    
+    return () => clearInterval(interval);
+}, [monitoringActive, sessionId, lastEventId]);
+\end{verbatim}
+
+This approach provides:
+\begin{itemize}
+    \item Near real-time updates (1-2 second latency)
+    \item Simple implementation without WebSocket complexity
+    \item Automatic pause when monitoring is inactive
+    \item Incremental data fetching using last event ID
+\end{itemize}
+
+\subsection{Application Tier Design}
+
+The application tier implements the core business logic, API endpoints, and database integration. It follows a layered architecture pattern with clear separation between handlers, services, and repositories.
+
+\subsubsection{Layered Architecture Pattern}
+
+The backend implements three distinct layers:
+
+\textbf{Handler Layer (HTTP Controllers):}
+\begin{itemize}
+    \item Receives HTTP requests from frontend and agents
+    \item Validates request parameters and authentication
+    \item Calls appropriate service layer methods
+    \item Formats responses and handles HTTP status codes
+    \item Manages error responses and logging
+\end{itemize}
+
+\textbf{Service Layer (Business Logic):}
+\begin{itemize}
+    \item Implements core business logic and workflows
+    \item Orchestrates multiple repository operations
+    \item Manages transactions for data consistency
+    \item Coordinates agent communication
+    \item Implements domain-specific rules and validation
+\end{itemize}
+
+\textbf{Repository Layer (Data Access):}
+\begin{itemize}
+    \item Abstracts database operations using GORM
+    \item Provides CRUD operations for entities
+    \item Implements complex queries and aggregations
+    \item Manages database connections and transactions
+    \item Handles database-specific optimizations
+\end{itemize}
+
+\subsubsection{API Endpoint Design}
+
+The backend exposes RESTful API endpoints organized by resource:
+
+\textbf{Session Management Endpoints:}
+\begin{itemize}
+    \item \texttt{POST /api/sessions} - Create new monitoring session
+    \item \texttt{GET /api/sessions} - List all sessions
+    \item \texttt{GET /api/sessions/:id} - Get session details
+    \item \texttt{PUT /api/sessions/:id} - Update session status
+    \item \texttt{DELETE /api/sessions/:id} - Delete session
+\end{itemize}
+
+\textbf{Event Endpoints:}
+\begin{itemize}
+    \item \texttt{POST /api/events} - Submit event (from agents)
+    \item \texttt{GET /api/sessions/:id/events} - Get events for session
+    \item \texttt{GET /api/events/:id} - Get specific event details
+    \item \texttt{GET /api/sessions/:id/events/export} - Export events
+\end{itemize}
+
+\textbf{Monitoring Control Endpoints:}
+\begin{itemize}
+    \item \texttt{POST /api/sessions/:id/start} - Start monitoring
+    \item \texttt{POST /api/sessions/:id/stop} - Stop monitoring
+    \item \texttt{POST /api/sessions/:id/pause} - Pause monitoring
+    \item \texttt{POST /api/sessions/:id/resume} - Resume monitoring
+\end{itemize}
+
+\textbf{File Management Endpoints:}
+\begin{itemize}
+    \item \texttt{POST /api/files/upload} - Upload malware sample
+    \item \texttt{GET /api/files/:id} - Download file
+    \item \texttt{DELETE /api/files/:id} - Delete uploaded file
+\end{itemize}
+
+\textbf{Agent Communication Endpoints:}
+\begin{itemize}
+    \item \texttt{POST /api/agents/register} - Register agent with backend
+    \item \texttt{POST /api/agents/heartbeat} - Agent health check
+    \item \texttt{GET /api/agents/status} - Get agent status
+\end{itemize}
+
+\subsubsection{Service Layer Components}
+
+Key service components implement business logic:
+
+\textbf{SessionService:}
+\begin{itemize}
+    \item Manages session lifecycle (create, start, stop, delete)
+    \item Coordinates with agent controller for monitoring
+    \item Tracks session state and metadata
+    \item Implements session timeout and cleanup logic
+\end{itemize}
+
+\textbf{EventService:}
+\begin{itemize}
+    \item Processes incoming events from agents
+    \item Validates event structure and content
+    \item Stores events in database with proper indexing
+    \item Retrieves events with filtering and pagination
+    \item Implements event export functionality
+\end{itemize}
+
+\textbf{AgentService:}
+\begin{itemize}
+    \item Coordinates communication with monitoring agents
+    \item Sends control commands (start, stop, configure)
+    \item Uploads files to agent environment
+    \item Monitors agent health and availability
+    \item Handles agent failures and reconnection
+\end{itemize}
+
+\textbf{FileService:}
+\begin{itemize}
+    \item Handles malware sample uploads
+    \item Stores files securely with metadata
+    \item Transfers files to agent environment
+    \item Implements file quarantine and scanning
+    \item Manages file cleanup and retention
+\end{itemize}
+
+\subsubsection{Data Processing Pipeline}
+
+Events flow through a processing pipeline:
+
+\begin{enumerate}
+    \item Agent captures system event
+    \item Agent formats event as JSON with metadata
+    \item Agent POSTs event to backend API
+    \item Handler validates event structure
+    \item Service enriches event with session context
+    \item Repository stores event in database
+    \item Database indexes event for efficient querying
+    \item Frontend polls for new events
+    \item Backend retrieves events from database
+    \item Events returned to frontend for display
+\end{enumerate}
+
+\subsubsection{Concurrency and Performance}
+
+The backend leverages Go's concurrency features:
+
+\textbf{Goroutines:}
+\begin{itemize}
+    \item Handle multiple concurrent requests efficiently
+    \item Process events asynchronously
+    \item Coordinate agent communication in parallel
+\end{itemize}
+
+\textbf{Channels:}
+\begin{itemize}
+    \item Communicate between goroutines safely
+    \item Implement worker pools for event processing
+    \item Coordinate shutdown and cleanup
+\end{itemize}
+
+\textbf{Connection Pooling:}
+\begin{itemize}
+    \item GORM manages database connection pool
+    \item Reuse connections for better performance
+    \item Configure max open and idle connections
+\end{itemize}
+
+\subsection{Data Collection Tier Design}
+
+The data collection tier consists of multiple specialized agents that work together to capture comprehensive system behavior. This tier is designed for extensibility and minimal performance impact.
+
+\subsubsection{Multi-Agent Architecture}
+
+The agent system implements a coordinated multi-agent design:
+
+\textbf{Controller Agent:}
+\begin{itemize}
+    \item \textit{Role:} Orchestrates other agents and coordinates with backend
+    \item \textit{Language:} Python 3.8+
+    \item \textit{Responsibilities:}
+    \begin{itemize}
+        \item Session lifecycle management
+        \item Agent deployment and coordination
+        \item File transfer and processing
+        \item Backend API communication
+        \item Health monitoring of all agents
+    \end{itemize}
+\end{itemize}
+
+\textbf{Injector Agent:}
+\begin{itemize}
+    \item \textit{Role:} Dynamic code injection for API hooking
+    \item \textit{Language:} TypeScript/JavaScript (Frida scripts)
+    \item \textit{Responsibilities:}
+    \begin{itemize}
+        \item Process attachment and injection
+        \item Windows API hooking (ReadFile, WriteFile, NtCreateUserProcess)
+        \item Event capture from hooked functions
+        \item Memory reading with size limits
+        \item Event formatting and transmission
+    \end{itemize}
+\end{itemize}
+
+\textbf{Network Monitor Agent:}
+\begin{itemize}
+    \item \textit{Role:} Network traffic interception and analysis
+    \item \textit{Language:} Python 3.8+
+    \item \textit{Responsibilities:}
+    \begin{itemize}
+        \item HTTP/HTTPS proxy interception
+        \item Raw packet capture
+        \item Protocol parsing (HTTP, DNS, etc.)
+        \item SSL/TLS handshake monitoring
+        \item Network event generation
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Agent Communication Protocol}
+
+Agents communicate using defined protocols:
+
+\textbf{Controller to Backend:}
+\begin{itemize}
+    \item REST API calls for session updates
+    \item Event submission via POST requests
+    \item File download requests
+    \item Status reporting and heartbeats
+\end{itemize}
+
+\textbf{Controller to Agents:}
+\begin{itemize}
+    \item Local IPC (Inter-Process Communication)
+    \item Command messages (start, stop, configure)
+    \item Configuration updates
+    \item Shutdown signals
+\end{itemize}
+
+\textbf{Agents to Controller:}
+\begin{itemize}
+    \item Event data submission
+    \item Status updates
+    \item Error reporting
+    \item Resource usage statistics
+\end{itemize}
+
+\subsubsection{Frida-Based Injection Design}
+
+The injector agent uses Frida's instrumentation capabilities:
+
+\textbf{Injection Process:}
+\begin{enumerate}
+    \item Controller identifies target process (PID)
+    \item Frida attaches to target process without restart
+    \item TypeScript agent script is injected into process
+    \item Script hooks specified Windows API functions
+    \item Hooks intercept function calls in real-time
+    \item Original function behavior is preserved
+    \item Event data is extracted and sent to controller
+\end{enumerate}
+
+\textbf{API Hooking Strategy:}
+
+\texttt{ReadFile Hook:}
+\begin{itemize}
+    \item Intercepts file read operations
+    \item Captures file handle, buffer, and bytes read
+    \item Resolves handle to file path
+    \item Extracts content preview (first N bytes)
+    \item Records timestamp and calling process
+\end{itemize}
+
+\texttt{WriteFile Hook:}
+\begin{itemize}
+    \item Intercepts file write operations
+    \item Captures file handle, buffer, and bytes written
+    \item Resolves handle to file path
+    \item Extracts content being written (first N bytes)
+    \item Tracks file creation vs. modification
+\end{itemize}
+
+\texttt{NtCreateUserProcess Hook:}
+\begin{itemize}
+    \item Intercepts process creation at kernel level
+    \item Captures full command line arguments
+    \item Records parent process PID
+    \item Tracks process creation flags
+    \item Monitors process handle inheritance
+\end{itemize}
+
+\subsubsection{Network Monitoring Design}
+
+The network monitor implements multiple capture strategies:
+
+\textbf{HTTP/HTTPS Interception:}
+\begin{itemize}
+    \item Uses mitmproxy for transparent proxy
+    \item Intercepts HTTP requests and responses
+    \item Captures full headers and body content
+    \item Handles SSL/TLS with certificate installation
+    \item Parses structured HTTP data
+\end{itemize}
+
+\textbf{Raw Packet Capture:}
+\begin{itemize}
+    \item Uses Scapy or pcap for low-level capture
+    \item Captures all network traffic
+    \item Filters relevant protocols
+    \item Extracts TCP/UDP connection details
+    \item Monitors DNS queries and responses
+\end{itemize}
+
+\textbf{Event Generation:}
+\begin{itemize}
+    \item Network events formatted consistently
+    \item Include source/destination IP and port
+    \item Capture protocol and payload summary
+    \item Record connection establishment/termination
+    \item Tag events with process information when available
+\end{itemize}
+
+\subsubsection{Agent Configuration Management}
+
+Agents are configured through structured configuration:
+
+\textbf{Configuration Parameters:}
+\begin{itemize}
+    \item Target process names or PIDs
+    \item API hooks to enable/disable
+    \item Content extraction limits (bytes)
+    \item Event filtering rules
+    \item Backend API endpoint and credentials
+    \item Logging level and output
+\end{itemize}
+
+\textbf{Configuration Sources:}
+\begin{itemize}
+    \item JSON configuration files
+    \item Environment variables
+    \item Backend API configuration endpoint
+    \item Command-line arguments
+\end{itemize}
+
+\subsubsection{Error Handling and Resilience}
+
+Agents implement robust error handling:
+
+\textbf{Fault Tolerance:}
+\begin{itemize}
+    \item Agents continue operation if target process crashes
+    \item Automatic reconnection to backend on network failure
+    \item Graceful degradation when hooks fail
+    \item Local event buffering during backend unavailability
+\end{itemize}
+
+\textbf{Resource Management:}
+\begin{itemize}
+    \item Bounded buffers to prevent memory leaks
+    \item Configurable event queue sizes
+    \item Automatic unhooking on resource exhaustion
+    \item CPU usage monitoring and throttling
+\end{itemize}
+
+\section{Database Design}
+
+The database design provides efficient storage and retrieval of monitoring data while maintaining flexibility for diverse event types. This section describes the entity relationships, schema design, and data flow patterns.
+
+\subsection{Entity-Relationship Diagram}
+
+The database consists of two primary entities with a one-to-many relationship:
+
+\textbf{Sessions Entity:}
+\begin{itemize}
+    \item Primary entity representing a monitoring session
+    \item Contains session metadata and status
+    \item One session has many events
+\end{itemize}
+
+\textbf{Events Entity:}
+\begin{itemize}
+    \item Records individual monitoring events
+    \item Links to parent session via foreign key
+    \item Uses JSONB for flexible event data storage
+\end{itemize}
+
+\textbf{Relationship:}
+\begin{itemize}
+    \item One-to-Many: Session (1) $\rightarrow$ Events (N)
+    \item Cascade delete: Deleting session removes all associated events
+    \item Foreign key constraint ensures referential integrity
+\end{itemize}
+
+\subsubsection{Entity Attributes}
+
+\textbf{Sessions Table:}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Attribute} & \textbf{Type} & \textbf{Description} \\
+\hline
+id & UUID (Primary Key) & Unique session identifier \\
+name & VARCHAR(255) & User-defined session name \\
+status & VARCHAR(50) & Session status (active, paused, stopped) \\
+created\_at & TIMESTAMP & Session creation timestamp \\
+updated\_at & TIMESTAMP & Last update timestamp \\
+started\_at & TIMESTAMP & Monitoring start time (nullable) \\
+stopped\_at & TIMESTAMP & Monitoring stop time (nullable) \\
+file\_path & TEXT & Path to uploaded file (nullable) \\
+file\_hash & VARCHAR(64) & SHA-256 hash of file (nullable) \\
+metadata & JSONB & Additional session metadata \\
+\hline
+\end{tabular}
+\caption{Sessions Table Schema}
+\end{table}
+
+\textbf{Events Table:}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Attribute} & \textbf{Type} & \textbf{Description} \\
+\hline
+id & BIGSERIAL (Primary Key) & Auto-incrementing event ID \\
+session\_id & UUID (Foreign Key) & References sessions(id) \\
+event\_type & VARCHAR(50) & Type of event (file, process, network) \\
+timestamp & TIMESTAMP & Event occurrence time \\
+process\_id & INTEGER & Process ID that generated event \\
+process\_name & VARCHAR(255) & Name of the process \\
+event\_data & JSONB & Flexible event-specific data \\
+created\_at & TIMESTAMP & Record insertion time \\
+\hline
+\end{tabular}
+\caption{Events Table Schema}
+\end{table}
+
+\subsection{Database Schema}
+
+\subsubsection{Schema Design Decisions}
+
+\textbf{Use of JSONB for Event Data:}
+
+The \texttt{event\_data} column uses PostgreSQL's JSONB type to store event-specific information. This design provides:
+
+\begin{itemize}
+    \item \textit{Flexibility:} Different event types have different attributes without requiring multiple tables
+    \item \textit{Performance:} JSONB is stored in binary format for fast access
+    \item \textit{Queryability:} PostgreSQL supports indexing and querying within JSONB columns
+    \item \textit{Schema Evolution:} New event attributes can be added without database migrations
+\end{itemize}
+
+\textbf{Example Event Data Structures:}
+
+File Operation Event:
+\begin{verbatim}
+{
+    "operation": "ReadFile",
+    "file_path": "C:\\Windows\\System32\\notepad.exe",
+    "bytes_read": 1024,
+    "content_preview": "4D5A90000300000004000000FFFF0000...",
+    "handle": "0x000001A4"
+}
+\end{verbatim}
+
+Process Creation Event:
+\begin{verbatim}
+{
+    "operation": "ProcessCreate",
+    "child_pid": 5432,
+    "command_line": "cmd.exe /c ipconfig",
+    "parent_pid": 1234,
+    "creation_flags": "0x00000000"
+}
+\end{verbatim}
+
+Network Event:
+\begin{verbatim}
+{
+    "operation": "HTTPRequest",
+    "method": "POST",
+    "url": "https://example.com/api/data",
+    "headers": {...},
+    "source_ip": "192.168.1.100",
+    "destination_ip": "93.184.216.34",
+    "destination_port": 443
+}
+\end{verbatim}
+
+\subsubsection{Indexing Strategy}
+
+Strategic indexes improve query performance:
+
+\textbf{Primary Indexes:}
+\begin{itemize}
+    \item \texttt{sessions(id)}: Primary key index (automatic)
+    \item \texttt{events(id)}: Primary key index (automatic)
+\end{itemize}
+
+\textbf{Foreign Key Index:}
+\begin{itemize}
+    \item \texttt{events(session\_id)}: Speeds up queries filtering by session
+\end{itemize}
+
+\textbf{Query Optimization Indexes:}
+\begin{itemize}
+    \item \texttt{events(timestamp)}: Enables efficient time-range queries
+    \item \texttt{events(event\_type)}: Speeds up filtering by event type
+    \item \texttt{events(process\_id)}: Facilitates process-specific queries
+\end{itemize}
+
+\textbf{Composite Index:}
+\begin{itemize}
+    \item \texttt{events(session\_id, timestamp)}: Optimizes session timeline queries
+\end{itemize}
+
+\textbf{JSONB Index:}
+\begin{itemize}
+    \item \texttt{GIN index on events(event\_data)}: Enables fast searches within JSONB data
+\end{itemize}
+
+\subsubsection{Database Constraints}
+
+\textbf{Referential Integrity:}
+\begin{verbatim}
+FOREIGN KEY (session_id) 
+    REFERENCES sessions(id) 
+    ON DELETE CASCADE
+\end{verbatim}
+
+This ensures:
+\begin{itemize}
+    \item Events cannot exist without a parent session
+    \item Deleting a session automatically removes all its events
+    \item Data consistency is maintained
+\end{itemize}
+
+\textbf{Check Constraints:}
+\begin{itemize}
+    \item \texttt{status IN ('created', 'active', 'paused', 'stopped')}: Valid session states
+    \item \texttt{event\_type IN ('file', 'process', 'network', 'registry')}: Valid event types
+\end{itemize}
+
+\textbf{Not Null Constraints:}
+\begin{itemize}
+    \item Critical fields like \texttt{session\_id}, \texttt{event\_type}, \texttt{timestamp} cannot be null
+\end{itemize}
+
+\subsection{Data Flow Diagrams}
+
+This section illustrates how data flows through the system from capture to storage to retrieval.
+
+\subsubsection{Event Capture and Storage Flow}
+
+\textbf{Level 0 DFD (Context Diagram):}
+
+The context diagram shows the system's interaction with external entities:
+
+\begin{itemize}
+    \item \textit{External Entities:} User (via browser), Monitored System (target of monitoring)
+    \item \textit{System Boundary:} OS-Pulse Platform
+    \item \textit{Data Flows:}
+    \begin{itemize}
+        \item User $\rightarrow$ System: Session commands, file uploads, queries
+        \item System $\rightarrow$ User: Event data, session status, reports
+        \item Monitored System $\rightarrow$ System: System events (file ops, processes, network)
+    \end{itemize}
+\end{itemize}
+
+\textbf{Level 1 DFD (Major Processes):}
+
+The level 1 DFD decomposes the system into major processes:
+
+\begin{enumerate}
+    \item \textbf{Process 1: Session Management}
+    \begin{itemize}
+        \item Input: Session commands from user
+        \item Output: Session status, session metadata
+        \item Data Store: Sessions table
+    \end{itemize}
+    
+    \item \textbf{Process 2: Event Capture}
+    \begin{itemize}
+        \item Input: System events from monitored system
+        \item Output: Formatted events to backend
+        \item Processing: API hooking, event extraction
+    \end{itemize}
+    
+    \item \textbf{Process 3: Event Processing}
+    \begin{itemize}
+        \item Input: Raw events from agents
+        \item Output: Processed events to database
+        \item Data Store: Events table
+        \item Processing: Validation, enrichment, storage
+    \end{itemize}
+    
+    \item \textbf{Process 4: Event Retrieval}
+    \begin{itemize}
+        \item Input: Event queries from frontend
+        \item Output: Filtered events to user
+        \item Data Store: Events table
+        \item Processing: Query execution, pagination, filtering
+    \end{itemize}
+    
+    \item \textbf{Process 5: Data Export}
+    \begin{itemize}
+        \item Input: Export request from user
+        \item Output: Formatted data file (JSON/CSV)
+        \item Data Store: Events table
+        \item Processing: Data formatting, file generation
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Level 2 DFD (Event Processing Detail):}
+
+Detailed flow for event processing:
+
+\begin{enumerate}
+    \item Agent captures system event
+    \item Agent formats event as JSON
+    \item Agent POSTs to \texttt{/api/events} endpoint
+    \item Handler validates request structure
+    \item Handler extracts session context
+    \item Service validates event data
+    \item Service enriches with metadata (timestamps)
+    \item Repository inserts into Events table
+    \item Database returns inserted row with ID
+    \item Success response sent to agent
+\end{enumerate}
+
+\subsubsection{Query and Retrieval Flow}
+
+\textbf{Frontend Query Process:}
+
+\begin{enumerate}
+    \item User opens session dashboard
+    \item Frontend sends GET request to \texttt{/api/sessions/:id/events}
+    \item Backend handler validates session ID
+    \item Service queries Events table with filters
+    \item Repository executes SQL query with pagination
+    \item Database returns matching events
+    \item Service formats events for frontend
+    \item Handler sends JSON response
+    \item Frontend updates component state
+    \item React renders events in table
+    \item User views real-time monitoring data
+\end{enumerate}
+
+\textbf{Polling Update Flow:}
+
+\begin{enumerate}
+    \item Frontend timer triggers every 2 seconds
+    \item GET request with last known event ID
+    \item Backend queries for events after last ID
+    \item Only new events are returned
+    \item Frontend appends new events to existing list
+    \item UI updates incrementally without full refresh
+\end{enumerate}
+
+\section{User Interface Design}
+
+The user interface design focuses on providing an intuitive, responsive experience for monitoring complex system behavior. This section describes the visual design, interaction patterns, and usability considerations.
+
+\subsection{Dashboard Layout Design}
+
+\subsubsection{Overall Dashboard Structure}
+
+The dashboard uses a flexible layout that adapts to monitoring state:
+
+\textbf{Pre-Monitoring State:}
+\begin{itemize}
+    \item Full-width welcome panel with upload area
+    \item Session list showing recent/active sessions
+    \item Quick start guide and documentation links
+    \item Prominent "New Session" button
+\end{itemize}
+
+\textbf{Monitoring Active State:}
+\begin{itemize}
+    \item Split-screen layout with 50/50 division
+    \item Left panel: noVNC viewer at 50\% zoom
+    \item Right panel: Tabbed event displays
+    \item Top header: Session controls and status
+    \item Bottom status bar: Statistics and agent health
+\end{itemize}
+
+\subsubsection{Header Component Design}
+
+The header provides session control and status information:
+
+\textbf{Left Section:}
+\begin{itemize}
+    \item Application logo and title
+    \item Current session name (editable)
+    \item Session ID display (click to copy)
+\end{itemize}
+
+\textbf{Center Section:}
+\begin{itemize}
+    \item Monitoring status indicator (green/yellow/red)
+    \item Control buttons:
+    \begin{itemize}
+        \item Start Monitoring (green play icon)
+        \item Pause Monitoring (yellow pause icon)
+        \item Stop Monitoring (red stop icon)
+    \end{itemize}
+    \item Real-time event counter
+\end{itemize}
+
+\textbf{Right Section:}
+\begin{itemize}
+    \item Upload File button with icon
+    \item Export Data dropdown menu
+    \item User settings menu
+    \item Help/documentation link
+\end{itemize}
+
+\subsubsection{VNC Viewer Integration}
+
+The noVNC viewer is embedded directly in the dashboard:
+
+\textbf{Viewer Features:}
+\begin{itemize}
+    \item Automatic connection to VM display
+    \item 50\% zoom level for optimal space usage
+    \item Full keyboard and mouse support
+    \item Clipboard integration for copy/paste
+    \item Connection status indicator
+\end{itemize}
+
+\textbf{Controls:}
+\begin{itemize}
+    \item Zoom adjustment (50\%, 75\%, 100\%, fit to screen)
+    \item Fullscreen toggle
+    \item Connection reconnect button
+    \item Screenshot capture
+\end{itemize}
+
+\subsubsection{Event Display Component}
+
+The event display uses a tabbed interface for organization:
+
+\textbf{Tab Structure:}
+\begin{itemize}
+    \item File Operations tab (default)
+    \item Process Events tab
+    \item Network Activity tab
+    \item All Events tab (combined view)
+    \item Each tab shows event count badge
+\end{itemize}
+
+\textbf{Table Layout:}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Column} & \textbf{Width} & \textbf{Content} \\
+\hline
+Time & 10\% & Timestamp (HH:MM:SS.mmm) \\
+Type & 12\% & Event type icon and label \\
+Process & 15\% & Process name and PID \\
+Details & 48\% & Event-specific details (truncated) \\
+Actions & 15\% & View details, export, tag buttons \\
+\hline
+\end{tabular}
+\caption{Event Table Column Structure}
+\end{table}
+
+\textbf{Row Interactions:}
+\begin{itemize}
+    \item Click row to expand inline details
+    \item Double-click to open detail modal
+    \item Hover to highlight and show quick actions
+    \item Color coding by event severity/type
+\end{itemize}
+
+\subsubsection{Filter and Search Interface}
+
+Filtering capabilities are provided above the event table:
+
+\textbf{Filter Controls:}
+\begin{itemize}
+    \item Text search box (searches all text fields)
+    \item Event type dropdown (multi-select)
+    \item Process name filter (auto-complete)
+    \item Time range selector (last 5min, 15min, 1hr, all)
+    \item Advanced filter button (opens modal)
+\end{itemize}
+
+\textbf{Advanced Filters:}
+\begin{itemize}
+    \item Specific file path matching (regex support)
+    \item Network destination filtering (IP/domain)
+    \item Event data field filtering (JSONB queries)
+    \item Exclude patterns (negative filters)
+\end{itemize}
+
+\subsection{Visual Design System}
+
+\subsubsection{Color Palette}
+
+The application uses a carefully selected color scheme:
+
+\textbf{Primary Colors:}
+\begin{itemize}
+    \item Brand Blue: \texttt{\#2563EB} (buttons, links, highlights)
+    \item Success Green: \texttt{\#10B981} (active monitoring, success states)
+    \item Warning Yellow: \texttt{\#F59E0B} (paused state, warnings)
+    \item Error Red: \texttt{\#EF4444} (errors, critical events, stop actions)
+\end{itemize}
+
+\textbf{Neutral Colors:}
+\begin{itemize}
+    \item Background: \texttt{\#F9FAFB} (light mode), \texttt{\#111827} (dark mode)
+    \item Surface: \texttt{\#FFFFFF} (light), \texttt{\#1F2937} (dark)
+    \item Text Primary: \texttt{\#111827} (light), \texttt{\#F9FAFB} (dark)
+    \item Text Secondary: \texttt{\#6B7280} (light), \texttt{\#9CA3AF} (dark)
+\end{itemize}
+
+\textbf{Event Type Colors:}
+\begin{itemize}
+    \item File Operations: \texttt{\#8B5CF6} (purple)
+    \item Process Events: \texttt{\#06B6D4} (cyan)
+    \item Network Activity: \texttt{\#F97316} (orange)
+    \item Registry Operations: \texttt{\#EC4899} (pink)
+\end{itemize}
+
+\subsubsection{Typography}
+
+Font selections prioritize readability and code display:
+
+\textbf{Font Families:}
+\begin{itemize}
+    \item UI Text: Inter (sans-serif) - clean, modern, highly readable
+    \item Code/Data: JetBrains Mono (monospace) - for event details, JSON
+    \item Headings: Inter (bold weights) - consistent with body text
+\end{itemize}
+
+\textbf{Type Scale:}
+\begin{itemize}
+    \item H1: 2.25rem (36px) - page titles
+    \item H2: 1.875rem (30px) - section headers
+    \item H3: 1.5rem (24px) - subsection headers
+    \item Body: 1rem (16px) - default text
+    \item Small: 0.875rem (14px) - secondary information
+    \item Code: 0.875rem (14px, monospace) - event data
+\end{itemize}
+
+\subsubsection{Component Styling}
+
+\textbf{Buttons:}
+\begin{itemize}
+    \item Primary: Solid blue background, white text, rounded corners
+    \item Secondary: White background, blue border, blue text
+    \item Danger: Solid red background, white text
+    \item Ghost: Transparent background, colored text, hover state
+    \item Icon buttons: Square, centered icon, subtle hover effect
+\end{itemize}
+
+\textbf{Cards:}
+\begin{itemize}
+    \item White/dark background based on theme
+    \item Subtle shadow: \texttt{0 1px 3px rgba(0,0,0,0.1)}
+    \item Rounded corners: 8px border radius
+    \item Padding: 1.5rem (24px)
+    \item Hover state: slight shadow increase
+\end{itemize}
+
+\textbf{Tables:}
+\begin{itemize}
+    \item Alternating row colors for readability
+    \item Sticky header that remains visible on scroll
+    \item Hover highlight on row interaction
+    \item Condensed padding for dense data display
+    \item Horizontal scroll for overflow
+\end{itemize}
+
+\subsection{Interaction Design}
+
+\subsubsection{User Workflows}
+
+\textbf{Workflow 1: Starting a New Monitoring Session}
+
+\begin{enumerate}
+    \item User clicks "New Session" button
+    \item Modal appears with session creation form
+    \item User enters session name
+    \item User uploads malware sample file
+    \item System validates file and creates session
+    \item Dashboard transitions to monitoring view
+    \item User clicks "Start Monitoring" button
+    \item System initializes agents and confirms ready state
+    \item User executes sample in noVNC viewer
+    \item Events begin appearing in real-time
+\end{enumerate}
+
+\textbf{Workflow 2: Analyzing Captured Events}
+
+\begin{enumerate}
+    \item User observes events appearing in table
+    \item User applies filters to focus on file operations
+    \item User clicks event row to expand inline details
+    \item Expanded view shows full event data formatted as JSON
+    \item User identifies suspicious file path
+    \item User applies search filter for that path
+    \item System displays all related events
+    \item User exports filtered events as CSV
+    \item User downloads file for external analysis
+\end{enumerate}
+
+\textbf{Workflow 3: Session Management}
+
+\begin{enumerate}
+    \item User clicks "Pause Monitoring" to stop event capture
+    \item Button changes to "Resume Monitoring"
+    \item User examines current events without new ones arriving
+    \item User resumes monitoring when ready
+    \item User clicks "Stop Monitoring" when analysis complete
+    \item System prompts for confirmation
+    \item User confirms stop action
+    \item Session status changes to "stopped"
+    \item User can still view and export historical events
+\end{enumerate}
+
+\subsubsection{Responsive Behaviors}
+
+\textbf{Desktop Layout (>1280px):}
+\begin{itemize}
+    \item Full split-screen view with VNC and events side-by-side
+    \item All controls and filters visible simultaneously
+    \item Maximum table columns displayed
+    \item No horizontal scrolling required
+\end{itemize}
+
+\textbf{Tablet Layout (768px - 1280px):}
+\begin{itemize}
+    \item Stacked layout: VNC viewer above event tables
+    \item Collapsible filter panel to save space
+    \item Reduced table columns (combined details)
+    \item Touch-optimized button sizes
+\end{itemize}
+
+\textbf{Mobile Layout (<768px):}
+\begin{itemize}
+    \item Single column layout
+    \item VNC viewer in expandable panel
+    \item Card-based event display instead of table
+    \item Bottom sheet for filters and actions
+    \item Swipe gestures for navigation
+\end{itemize}
+
+\subsubsection{Feedback and Loading States}
+
+\textbf{Loading Indicators:}
+\begin{itemize}
+    \item Skeleton screens while fetching initial data
+    \item Spinner overlays for actions in progress
+    \item Progress bars for file uploads
+    \item Shimmer effect for loading table rows
+\end{itemize}
+
+\textbf{Success Feedback:}
+\begin{itemize}
+    \item Toast notifications for completed actions
+    \item Green checkmark animations
+    \item Status badge updates
+    \item Subtle highlight of affected elements
+\end{itemize}
+
+\textbf{Error Handling:}
+\begin{itemize}
+    \item Inline error messages below form fields
+    \item Toast notifications for critical errors
+    \item Error boundary components for graceful degradation
+    \item Retry buttons for failed operations
+    \item Detailed error information in console
+\end{itemize}
+
+\subsection{Accessibility Considerations}
+
+\subsubsection{Keyboard Navigation}
+
+\begin{itemize}
+    \item All interactive elements accessible via Tab key
+    \item Logical tab order following visual flow
+    \item Keyboard shortcuts for common actions:
+    \begin{itemize}
+        \item Ctrl+S: Start monitoring
+        \item Ctrl+P: Pause monitoring
+        \item Ctrl+E: Export data
+        \item Ctrl+F: Focus search box
+        \item Esc: Close modals
+    \end{itemize}
+    \item Visible focus indicators on all focusable elements
+    \item Skip navigation links for screen readers
+\end{itemize}
+
+\subsubsection{Screen Reader Support}
+
+\begin{itemize}
+    \item Semantic HTML elements (header, nav, main, aside)
+    \item ARIA labels for icon-only buttons
+    \item ARIA live regions for real-time event updates
+    \item Alt text for all images and icons
+    \item Table headers properly associated with data cells
+    \item Form labels explicitly linked to inputs
+\end{itemize}
+
+\subsubsection{Visual Accessibility}
+
+\begin{itemize}
+    \item WCAG AA contrast ratios (4.5:1 for text)
+    \item Color not used as sole means of conveying information
+    \item Icons paired with text labels
+    \item Sufficient size for touch targets (44x44px minimum)
+    \item Resizable text without breaking layout
+    \item Dark mode support for light-sensitive users
+\end{itemize}
+
+\section{Security and Privacy Design}
+
+Security and privacy are critical considerations for a system monitoring tool that handles sensitive data. This section outlines the security architecture and privacy safeguards.
+
+\subsection{Authentication and Authorization}
+
+\subsubsection{Session-Based Authentication}
+
+\textbf{Authentication Flow:}
+\begin{enumerate}
+    \item User accesses application
+    \item Backend generates unique session token
+    \item Session token stored in HTTP-only cookie
+    \item Cookie sent with all subsequent requests
+    \item Backend validates session token on each request
+    \item Expired sessions automatically cleared
+\end{enumerate}
+
+\textbf{Session Management:}
+\begin{itemize}
+    \item Session tokens generated using cryptographically secure random
+    \item Tokens stored in secure session store (Redis or database)
+    \item Configurable session timeout (default: 24 hours)
+    \item Automatic session renewal on activity
+    \item Session invalidation on logout
+\end{itemize}
+
+\subsubsection{Authorization Model}
+
+\textbf{Session Isolation:}
+\begin{itemize}
+    \item Each monitoring session belongs to specific user
+    \item Users can only access their own sessions
+    \item Session IDs validated on every API request
+    \item Foreign key constraints enforce data isolation
+\end{itemize}
+
+\textbf{Permission Levels (Future Enhancement):}
+\begin{itemize}
+    \item Admin: Create, view, modify, delete all sessions
+    \item User: Create and manage own sessions only
+    \item Viewer: Read-only access to shared sessions
+\end{itemize}
+
+\subsection{Data Security}
+
+\subsubsection{Encryption in Transit}
+
+\textbf{HTTPS/TLS:}
+\begin{itemize}
+    \item All communication encrypted using TLS 1.2 or higher
+    \item Strong cipher suites enforced
+    \item HSTS headers to prevent downgrade attacks
+    \item Certificate pinning for agent-backend communication
+\end{itemize}
+
+\textbf{API Security:}
+\begin{itemize}
+    \item CORS policies restrict cross-origin requests
+    \item Content Security Policy headers prevent XSS
+    \item Rate limiting prevents abuse and DoS attacks
+    \item Request size limits prevent memory exhaustion
+\end{itemize}
+
+\subsubsection{Encryption at Rest}
+
+\textbf{Database Encryption:}
+\begin{itemize}
+    \item PostgreSQL connection encryption enabled
+    \item Sensitive data in JSONB encrypted where applicable
+    \item Database credentials stored in environment variables
+    \item Database backups encrypted before storage
+\end{itemize}
+
+\textbf{File Storage:}
+\begin{itemize}
+    \item Uploaded malware samples stored in quarantine directory
+    \item File permissions restricted to application user only
+    \item Files hashed (SHA-256) for integrity verification
+    \item Automatic cleanup of old files based on retention policy
+\end{itemize}
+
+\subsection{Input Validation and Sanitization}
+
+\subsubsection{Backend Validation}
+
+\textbf{Request Validation:}
+\begin{itemize}
+    \item All API inputs validated against strict schemas
+    \item Type checking enforced (string, integer, UUID, etc.)
+    \item Length limits on all text inputs
+    \item Whitelist approach for allowed values
+    \item Rejection of malformed JSON
+\end{itemize}
+
+\textbf{SQL Injection Prevention:}
+\begin{itemize}
+    \item GORM parameterized queries used exclusively
+    \item No raw SQL with user input
+    \item ORM-level query validation
+    \item Prepared statements for complex queries
+\end{itemize}
+
+\textbf{Path Traversal Prevention:}
+\begin{itemize}
+    \item File paths sanitized and validated
+    \item Absolute paths resolved and checked
+    \item Access restricted to designated directories
+    \item Symbolic link resolution prevented
+\end{itemize}
+
+\subsubsection{Frontend Validation}
+
+\textbf{Client-Side Checks:}
+\begin{itemize}
+    \item Form validation before submission
+    \item File type and size validation on upload
+    \item Input sanitization using DOMPurify
+    \item XSS prevention through React's JSX escaping
+\end{itemize}
+
+\textbf{Content Security:}
+\begin{itemize}
+    \item User-provided content displayed safely
+    \item Event data rendered with proper escaping
+    \item No eval() or innerHTML with user data
+    \item Strict Content Security Policy enforced
+\end{itemize}
+
+\subsection{Agent Security}
+
+\subsubsection{Agent Authentication}
+
+\textbf{Agent Registration:}
+\begin{itemize}
+    \item Agents authenticate with pre-shared key
+    \item API key rotated periodically
+    \item Agent identity verified on each request
+    \item Invalid agents rejected immediately
+\end{itemize}
+
+\textbf{Command Validation:}
+\begin{itemize}
+    \item Control commands digitally signed
+    \item Commands expire after short time window
+    \item Replay attack prevention through nonces
+    \item Only authorized commands executed
+\end{itemize}
+
+\subsubsection{Privilege Management}
+
+\textbf{Required Privileges:}
+\begin{itemize}
+    \item Injector agent requires debug privileges (SeDebugPrivilege)
+    \item Network monitor requires raw socket access
+    \item Agents run with least privileges necessary
+    \item Privilege escalation attempts logged
+\end{itemize}
+
+\textbf{Isolation:}
+\begin{itemize}
+    \item Agents run in isolated process space
+    \item File system access restricted to monitoring scope
+    \item Network access limited to backend communication
+    \item Resource limits enforced (CPU, memory)
+\end{itemize}
+
+\subsection{Privacy Considerations}
+
+\subsubsection{Data Minimization}
+
+\textbf{Collection Limits:}
+\begin{itemize}
+    \item Content preview limited to first N bytes (configurable)
+    \item Sensitive data (passwords, keys) filtered when detected
+    \item Network payloads truncated to prevent excessive storage
+    \item Monitoring scope configurable to specific processes
+\end{itemize}
+
+\textbf{Retention Policy:}
+\begin{itemize}
+    \item Events automatically purged after retention period
+    \item User can delete sessions and all associated data
+    \item Database vacuum runs periodically
+    \item Backups follow same retention rules
+\end{itemize}
+
+\subsubsection{Data Handling}
+
+\textbf{Sensitive Information:}
+\begin{itemize}
+    \item Warning displayed when monitoring captures sensitive data
+    \item Users responsible for complying with applicable laws
+    \item System provides tools for data redaction
+    \item Export includes privacy warnings
+\end{itemize}
+
+\textbf{Audit Trail:}
+\begin{itemize}
+    \item All access to sessions logged
+    \item Export operations recorded
+    \item Session modifications timestamped
+    \item Logs retained for compliance purposes
+\end{itemize}
+
+\subsection{Security Monitoring}
+
+\subsubsection{Logging and Auditing}
+
+\textbf{Application Logs:}
+\begin{itemize}
+    \item All API requests logged with timestamps
+    \item Authentication attempts recorded
+    \item Error conditions logged with context
+    \item Performance metrics collected
+\end{itemize}
+
+\textbf{Security Events:}
+\begin{itemize}
+    \item Failed authentication attempts
+    \item Unusual API access patterns
+    \item Large data exports
+    \item Agent connection/disconnection
+    \item Configuration changes
+\end{itemize}
+
+\subsubsection{Incident Response}
+
+\textbf{Detection:}
+\begin{itemize}
+    \item Anomaly detection for unusual activity
+    \item Rate limiting triggers alerts
+    \item Failed authentication threshold monitoring
+    \item Resource exhaustion detection
+\end{itemize}
+
+\textbf{Response Procedures:}
+\begin{itemize}
+    \item Automatic session termination on security violations
+    \item IP-based blocking for repeat offenders
+    \item Alert notifications to administrators
+    \item Forensic logging for investigation
+\end{itemize}
+
+This comprehensive system design provides a solid foundation for implementing OS-Pulse as a secure, scalable, and user-friendly system monitoring platform. The multi-tier architecture ensures separation of concerns, the database design provides flexibility with performance, the user interface prioritizes usability and accessibility, and the security design addresses critical protection requirements for handling sensitive monitoring data.

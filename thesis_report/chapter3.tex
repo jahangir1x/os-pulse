@@ -1,0 +1,630 @@
+\chapter{System Analysis and Requirements}
+
+This chapter presents a comprehensive analysis of the OS-Pulse system requirements, examining both functional and non-functional aspects that guide the development process. It includes a detailed feasibility study covering technical, operational, and economic perspectives, followed by user requirements and use case analysis that define how the system serves its intended users.
+
+\section{Requirement Analysis}
+
+Requirement analysis is a critical phase in software development that involves identifying, documenting, and managing the needs and expectations of stakeholders. For OS-Pulse, this process focuses on understanding the requirements of security researchers, malware analysts, and system administrators who need comprehensive real-time monitoring capabilities.
+
+\subsection{Functional Requirements}
+
+Functional requirements define what the system should do—the specific behaviors, functions, and services it must provide to users. The following functional requirements have been identified for OS-Pulse:
+
+\subsubsection{FR1: Real-Time System Monitoring}
+
+The system shall provide real-time monitoring capabilities for multiple system activities including file operations, process creation and termination, network communications, and registry modifications. This monitoring must operate with minimal latency (under 2 seconds from event occurrence to display) and capture comprehensive event metadata including timestamps, process identifiers, and operation-specific details.
+
+\subsubsection{FR2: Session Management}
+
+The system shall implement a robust session management mechanism that allows users to:
+\begin{itemize}
+    \item Create new monitoring sessions with unique identifiers
+    \item Start, pause, resume, and stop monitoring activities within a session
+    \item Associate all captured events with specific sessions
+    \item Maintain session state across backend restarts
+    \item Query session history and metadata
+\end{itemize}
+
+\subsubsection{FR3: File Operation Monitoring}
+
+The system shall monitor and record all file system operations including:
+\begin{itemize}
+    \item File read operations with configurable content extraction (up to specified byte limits)
+    \item File write operations with data preview capabilities
+    \item File creation and deletion events with full path resolution
+    \item File metadata modifications (attributes, timestamps, permissions)
+    \item Directory enumeration and traversal patterns
+\end{itemize}
+
+\subsubsection{FR4: Process Activity Monitoring}
+
+The system shall capture comprehensive process-related events including:
+\begin{itemize}
+    \item Process creation with full command-line arguments
+    \item Parent-child process relationship mapping
+    \item Process termination with exit codes
+    \item Module loading and dynamic library injection detection
+    \item Process privilege escalation attempts
+\end{itemize}
+
+\subsubsection{FR5: Network Traffic Analysis}
+
+The system shall provide network monitoring capabilities that include:
+\begin{itemize}
+    \item HTTP/HTTPS request and response interception
+    \item Full header capture for protocol analysis
+    \item Raw socket communication monitoring
+    \item SSL/TLS handshake analysis
+    \item Protocol-specific parsing (HTTP, FTP, SMTP, DNS)
+    \item Network connection establishment and termination tracking
+\end{itemize}
+
+\subsubsection{FR6: Dynamic Code Injection}
+
+The system shall implement non-intrusive monitoring through dynamic code injection that:
+\begin{itemize}
+    \item Does not require target process restart
+    \item Uses Frida framework for runtime instrumentation
+    \item Selectively hooks critical Windows API functions
+    \item Maintains system stability during monitoring
+    \item Provides configurable monitoring depth and scope
+\end{itemize}
+
+\subsubsection{FR7: Web-Based Dashboard}
+
+The system shall provide a modern, responsive web interface that:
+\begin{itemize}
+    \item Displays real-time monitoring events in organized tables
+    \item Supports filtering, searching, and pagination of events
+    \item Provides integrated noVNC viewer for virtual machine interaction
+    \item Offers session control buttons (start, stop, pause monitoring)
+    \item Enables file upload for malware sample analysis
+    \item Supports multiple simultaneous user sessions
+\end{itemize}
+
+\subsubsection{FR8: Data Export and Reporting}
+
+The system shall enable users to export monitoring data in multiple formats:
+\begin{itemize}
+    \item JSON format for programmatic analysis
+    \item CSV format for spreadsheet applications
+    \item Filtered exports based on event type, time range, or process
+    \item Session summary reports with statistics
+    \item Event timeline visualization exports
+\end{itemize}
+
+\subsubsection{FR9: Agent Coordination}
+
+The system shall implement a multi-agent architecture where:
+\begin{itemize}
+    \item Controller agent manages session lifecycle
+    \item Injector agent handles dynamic instrumentation
+    \item Network monitor agent captures traffic
+    \item All agents coordinate through the backend API
+    \item Agent health monitoring and status reporting
+\end{itemize}
+
+\subsubsection{FR10: Data Persistence}
+
+The system shall store all monitoring data persistently with:
+\begin{itemize}
+    \item PostgreSQL database for structured storage
+    \item JSONB columns for flexible event data
+    \item Automatic database migrations
+    \item Data integrity through foreign key relationships
+    \item Indexing for query performance optimization
+\end{itemize}
+
+\subsection{Non-functional Requirements}
+
+Non-functional requirements define how the system should perform its functions, addressing quality attributes such as performance, reliability, usability, and security.
+
+\subsubsection{NFR1: Performance Requirements}
+
+\textbf{Response Time:} The system shall display monitoring events within 1-2 seconds of their occurrence on the monitored system.
+
+\textbf{Throughput:} The system shall handle at least 1000 events per second without data loss or significant performance degradation.
+
+\textbf{Resource Utilization:} The monitoring agents shall not consume more than 10\% CPU and 200MB memory on the target system under normal operation.
+
+\textbf{Database Performance:} Database queries shall return results within 500ms for standard operations and 2 seconds for complex analytical queries.
+
+\subsubsection{NFR2: Scalability Requirements}
+
+\textbf{Horizontal Scaling:} The backend services shall support horizontal scaling to handle increased load from multiple concurrent sessions.
+
+\textbf{Session Capacity:} The system shall support at least 100 concurrent monitoring sessions with isolated data storage.
+
+\textbf{Data Volume:} The system shall efficiently handle monitoring sessions generating up to 1 million events without performance degradation.
+
+\textbf{User Load:} The web dashboard shall support at least 50 concurrent users accessing different sessions simultaneously.
+
+\subsubsection{NFR3: Reliability Requirements}
+
+\textbf{Availability:} The system shall maintain 99\% uptime during normal operation, excluding scheduled maintenance.
+
+\textbf{Fault Tolerance:} Agent failures shall not crash the monitored processes or corrupt the monitoring session data.
+
+\textbf{Data Integrity:} All captured events shall be accurately stored without data loss, with transaction support for critical operations.
+
+\textbf{Recovery:} The system shall recover gracefully from agent crashes or network interruptions, with automatic reconnection capabilities.
+
+\subsubsection{NFR4: Usability Requirements}
+
+\textbf{Learnability:} Users with basic security analysis knowledge shall be able to start monitoring within 10 minutes of first use.
+
+\textbf{Interface Design:} The web interface shall follow modern UI/UX principles with intuitive navigation and clear visual hierarchy.
+
+\textbf{Accessibility:} The dashboard shall be responsive and accessible across desktop, tablet, and mobile devices.
+
+\textbf{Documentation:} Comprehensive user documentation and inline help shall be available throughout the interface.
+
+\subsubsection{NFR5: Security Requirements}
+
+\textbf{Authentication:} The system shall implement session-based access control to prevent unauthorized access to monitoring data.
+
+\textbf{Data Encryption:} All communication between components shall use HTTPS/TLS encryption.
+
+\textbf{Privilege Management:} The system shall require appropriate administrator privileges for system-level monitoring operations.
+
+\textbf{Input Validation:} All user inputs and API requests shall be validated and sanitized to prevent injection attacks.
+
+\textbf{Isolation:} Each monitoring session shall be completely isolated from other sessions to prevent data leakage.
+
+\subsubsection{NFR6: Maintainability Requirements}
+
+\textbf{Code Quality:} The codebase shall follow language-specific best practices and maintain consistent coding standards.
+
+\textbf{Modularity:} The system shall be designed with modular, loosely coupled components to facilitate maintenance and updates.
+
+\textbf{Testing:} The system shall maintain at least 70\% code coverage through automated unit and integration tests.
+
+\textbf{Documentation:} All major components and APIs shall be thoroughly documented with inline comments and external documentation.
+
+\subsubsection{NFR7: Compatibility Requirements}
+
+\textbf{Operating System:} The monitoring agents shall support Windows 10 and Windows Server 2016 or later versions.
+
+\textbf{Browser Support:} The web dashboard shall be compatible with modern browsers (Chrome 90+, Firefox 88+, Edge 90+, Safari 14+).
+
+\textbf{Database:} The system shall support PostgreSQL 12 or later versions with JSONB support.
+
+\textbf{Runtime:} Backend services shall run on Go 1.21+ and agents on Python 3.8+ or Node.js 16+.
+
+\subsubsection{NFR8: Portability Requirements}
+
+\textbf{Backend Deployment:} The backend services shall be deployable on Linux, Windows, and macOS platforms.
+
+\textbf{Database Portability:} Database migrations shall be managed automatically using GORM, ensuring portability across environments.
+
+\textbf{Configuration Management:} System configuration shall be externalized using environment variables or configuration files.
+
+\section{Feasibility Study}
+
+A feasibility study evaluates the practicality and viability of implementing the proposed system. This section examines technical, operational, and economic feasibility to determine whether the OS-Pulse project is viable and worth pursuing.
+
+\subsection{Technical Feasibility}
+
+Technical feasibility assesses whether the proposed system can be developed with available technology, tools, and expertise. For OS-Pulse, several technical aspects have been evaluated:
+
+\subsubsection{Dynamic Instrumentation Technology}
+
+\textbf{Assessment:} The Frida framework provides mature, well-documented APIs for dynamic code instrumentation on Windows platforms. It has been successfully used in numerous security research projects and commercial tools.
+
+\textbf{Conclusion:} Technically feasible. Frida's extensive documentation, active community, and proven track record make it suitable for implementing the injection agent component.
+
+\subsubsection{Web Technology Stack}
+
+\textbf{Assessment:} The combination of React 18, TypeScript, and Tailwind CSS represents a modern, widely-adopted frontend stack with excellent documentation and community support. These technologies are stable, performant, and suitable for building real-time dashboards.
+
+\textbf{Conclusion:} Highly feasible. The chosen frontend technologies are mature, well-supported, and have been successfully used in similar real-time monitoring applications.
+
+\subsubsection{Backend Framework Selection}
+
+\textbf{Assessment:} Go with the Echo framework provides high performance, strong concurrency support, and type safety—all essential for building a robust API server handling real-time data streams. GORM simplifies database operations while maintaining flexibility.
+
+\textbf{Conclusion:} Technically sound. Go's performance characteristics and Echo's lightweight design make this combination suitable for handling high-frequency event processing.
+
+\subsubsection{Database Technology}
+
+\textbf{Assessment:} PostgreSQL's JSONB support enables flexible storage of diverse event types without sacrificing query performance. Its mature replication and backup features ensure data reliability.
+
+\textbf{Conclusion:} Appropriate choice. PostgreSQL provides the necessary features for both structured and semi-structured data storage with excellent performance characteristics.
+
+\subsubsection{Network Monitoring Capabilities}
+
+\textbf{Assessment:} Python's rich ecosystem of networking libraries (Scapy, mitmproxy) provides robust packet capture and HTTP interception capabilities. These tools have been extensively tested in security research contexts.
+
+\textbf{Conclusion:} Feasible with existing libraries. Network monitoring requirements can be met using established Python networking libraries.
+
+\subsubsection{Real-Time Communication}
+
+\textbf{Assessment:} While the current design uses polling-based updates, the architecture supports future migration to WebSocket-based real-time communication for improved responsiveness.
+
+\textbf{Conclusion:} Currently feasible with polling; upgradeable to WebSocket as needed.
+
+\subsubsection{Development Team Expertise}
+
+\textbf{Assessment:} The project requires knowledge of multiple technologies: Go, React, TypeScript, Python, Frida, and PostgreSQL. While this represents a diverse skill set, all technologies have extensive learning resources available.
+
+\textbf{Conclusion:} Feasible with appropriate learning investment. The technologies chosen have gentle learning curves and excellent documentation.
+
+\subsubsection{Integration Complexity}
+
+\textbf{Assessment:} Integrating multiple components (frontend, backend, agents, database) presents coordination challenges but follows well-established microservices patterns.
+
+\textbf{Conclusion:} Manageable complexity. Standard RESTful API patterns and clear component boundaries make integration achievable.
+
+\textbf{Overall Technical Feasibility:} The OS-Pulse project is technically feasible. All required technologies are mature, well-documented, and have been successfully used in similar applications. The main technical challenges—dynamic instrumentation and real-time data processing—can be addressed using established frameworks and patterns.
+
+\subsection{Operational Feasibility}
+
+Operational feasibility examines whether the system can be successfully operated and maintained once deployed, and whether it will be accepted by users.
+
+\subsubsection{User Acceptance}
+
+\textbf{Target User Base:} Security researchers, malware analysts, and system administrators who currently rely on fragmented tools for system monitoring.
+
+\textbf{Assessment:} These users actively seek integrated monitoring solutions that provide comprehensive visibility into system behavior. The web-based interface lowers the barrier to entry compared to command-line tools.
+
+\textbf{Conclusion:} High likelihood of user acceptance. The system addresses real pain points in existing workflows.
+
+\subsubsection{Training Requirements}
+
+\textbf{Assessment:} Users familiar with security analysis concepts will require minimal training. The intuitive web interface and clear visualization of events reduce the learning curve.
+
+\textbf{Training Needs:}
+\begin{itemize}
+    \item Basic web interface navigation (5-10 minutes)
+    \item Understanding event types and filtering (15-20 minutes)
+    \item Session management and data export (10 minutes)
+    \item Advanced analysis techniques (30-60 minutes)
+\end{itemize}
+
+\textbf{Conclusion:} Minimal training required. Most users can become productive within an hour of first use.
+
+\subsubsection{System Administration}
+
+\textbf{Assessment:} The system requires standard system administration tasks: database management, backend service deployment, and agent configuration.
+
+\textbf{Administrative Tasks:}
+\begin{itemize}
+    \item Database backup and maintenance
+    \item Backend service monitoring and updates
+    \item Agent deployment and configuration
+    \item Log monitoring and troubleshooting
+\end{itemize}
+
+\textbf{Conclusion:} Standard operational requirements. Can be managed by personnel with basic DevOps knowledge.
+
+\subsubsection{Integration with Existing Workflows}
+
+\textbf{Assessment:} The system complements existing security analysis workflows by providing detailed system behavior data that can be exported for use in other tools.
+
+\textbf{Integration Points:}
+\begin{itemize}
+    \item JSON/CSV export for SIEM integration
+    \item API endpoints for programmatic access
+    \item Compatibility with standard virtualization platforms
+    \item Data format compatibility with analysis tools
+\end{itemize}
+
+\textbf{Conclusion:} Fits well into existing workflows. The export capabilities enable integration with established security toolchains.
+
+\subsubsection{Performance Impact}
+
+\textbf{Assessment:} While monitoring introduces some system overhead, the configurable nature of monitoring depth allows users to balance comprehensiveness with performance.
+
+\textbf{Mitigation Strategies:}
+\begin{itemize}
+    \item Configurable monitoring rules to reduce overhead
+    \item Selective API hooking based on analysis needs
+    \item Bounded buffer sizes to prevent memory issues
+    \item Performance monitoring and alerting
+\end{itemize}
+
+\textbf{Conclusion:} Acceptable performance impact with proper configuration.
+
+\subsubsection{Deployment Complexity}
+
+\textbf{Assessment:} The system requires deploying multiple components (database, backend, agents) but follows standard deployment patterns.
+
+\textbf{Deployment Requirements:}
+\begin{itemize}
+    \item PostgreSQL database server (Docker or native)
+    \item Go backend service (single binary)
+    \item Web frontend (static files served by backend)
+    \item Python/Node.js runtime for agents
+\end{itemize}
+
+\textbf{Conclusion:} Moderate deployment complexity. Can be containerized for simplified deployment.
+
+\textbf{Overall Operational Feasibility:} The system is operationally feasible. It addresses real user needs, requires minimal training, and can be integrated into existing workflows. The operational requirements are standard for web-based applications and can be managed with typical IT infrastructure.
+
+\subsection{Economic Feasibility}
+
+Economic feasibility evaluates the cost-effectiveness of developing and operating the system, considering both development costs and potential benefits.
+
+\subsubsection{Development Costs}
+
+\textbf{Personnel Costs:}
+\begin{itemize}
+    \item Single developer for 6-8 months (full project lifecycle)
+    \item Estimated effort: 1000-1200 person-hours
+    \item No additional team members required for initial version
+\end{itemize}
+
+\textbf{Technology Costs:}
+\begin{itemize}
+    \item All core technologies are open-source (Go, React, PostgreSQL, Python, Frida)
+    \item Zero licensing costs for development tools
+    \item Optional: Cloud hosting for testing environment (\$50-100/month)
+\end{itemize}
+
+\textbf{Infrastructure Costs:}
+\begin{itemize}
+    \item Development workstation (existing resources)
+    \item Virtual machine for testing (VirtualBox or VMware - free)
+    \item Version control (GitHub - free for open source)
+\end{itemize}
+
+\textbf{Total Estimated Development Cost:} Minimal monetary investment beyond developer time, as all required software is open-source and freely available.
+
+\subsubsection{Operational Costs}
+
+\textbf{Hosting Costs (if deployed):}
+\begin{itemize}
+    \item Database server: \$20-50/month (cloud VM or managed database)
+    \item Application server: \$10-30/month (for backend services)
+    \item Static file hosting: \$5-10/month (for frontend)
+    \item Total: \$35-90/month depending on scale
+\end{itemize}
+
+\textbf{Maintenance Costs:}
+\begin{itemize}
+    \item Ongoing development and bug fixes: 5-10 hours/month
+    \item Infrastructure monitoring and updates: 2-5 hours/month
+    \item Security patches and dependency updates: 3-5 hours/month
+\end{itemize}
+
+\textbf{Self-Hosted Option:} Organizations can self-host to eliminate recurring hosting costs, requiring only internal infrastructure resources.
+
+\subsubsection{Cost-Benefit Analysis}
+
+\textbf{Current Solution Costs:} Security researchers currently use multiple fragmented tools:
+\begin{itemize}
+    \item Commercial system monitoring tools: \$500-2000/license
+    \item Network analysis tools: \$300-1500/license
+    \item Process monitoring utilities: \$200-800/license
+    \item Time cost of tool switching and data correlation: 20-30\% productivity loss
+\end{itemize}
+
+\textbf{Proposed Solution Benefits:}
+\begin{itemize}
+    \item Unified platform eliminates multiple tool licenses
+    \item Integrated data correlation reduces analysis time by 40-50\%
+    \item Web-based access enables remote collaboration
+    \item Open-source nature allows customization for specific needs
+    \item No per-user licensing costs
+\end{itemize}
+
+\textbf{Return on Investment:} For security teams analyzing more than 10 malware samples per month, the productivity gains and license cost savings can justify the development investment within 6-12 months.
+
+\subsubsection{Risk Assessment}
+
+\textbf{Financial Risks:}
+\begin{itemize}
+    \item \textit{Low Risk:} Reliance on open-source technologies eliminates vendor lock-in
+    \item \textit{Low Risk:} Minimal capital investment required upfront
+    \item \textit{Medium Risk:} Potential need for performance optimization requiring additional development time
+\end{itemize}
+
+\textbf{Mitigation Strategies:}
+\begin{itemize}
+    \item Phased development approach to validate each component
+    \item Performance testing throughout development cycle
+    \item Community support for open-source dependencies
+\end{itemize}
+
+\subsubsection{Alternative Solutions}
+
+\textbf{Commercial Options:}
+\begin{itemize}
+    \item Cuckoo Sandbox: Free but limited real-time capabilities
+    \item Any.Run: \$40-300/month per user with limitations
+    \item VMRay: Enterprise pricing (\$50,000+/year)
+\end{itemize}
+
+\textbf{Competitive Advantage:} OS-Pulse offers similar capabilities to commercial solutions while remaining open-source and customizable, with significantly lower total cost of ownership.
+
+\textbf{Overall Economic Feasibility:} The project is economically viable. Development costs are minimal due to open-source technologies, and the potential benefits—both in direct cost savings and productivity improvements—justify the investment. For academic or research purposes, the project provides excellent learning value with practical applications.
+
+\section{User Requirements and Use Cases}
+
+This section identifies the specific needs of different user types and describes how they interact with the system through detailed use cases.
+
+\subsection{User Identification}
+
+The OS-Pulse platform serves three primary user types:
+
+\subsubsection{Primary User: Security Researcher}
+\textbf{Profile:} Security professionals who analyze malware, investigate security incidents, and research system behavior patterns.
+
+\textbf{Needs:}
+\begin{itemize}
+    \item Comprehensive visibility into malware behavior
+    \item Real-time monitoring without system impact
+    \item Detailed event logs for forensic analysis
+    \item Data export for integration with analysis pipelines
+    \item Session management for multiple analysis projects
+\end{itemize}
+
+\subsubsection{Secondary User: Malware Analyst}
+\textbf{Profile:} Specialists focused on reverse engineering and analyzing malicious software samples.
+
+\textbf{Needs:}
+\begin{itemize}
+    \item Detailed file operation tracking (reads, writes, modifications)
+    \item Network communication patterns and C\&C detection
+    \item Process creation chains and injection techniques
+    \item Safe execution environment for unknown samples
+    \item Historical data for comparative analysis
+\end{itemize}
+
+\subsubsection{Tertiary User: System Administrator}
+\textbf{Profile:} IT professionals responsible for system security and operational monitoring.
+
+\textbf{Needs:}
+\begin{itemize}
+    \item Suspicious activity detection on production systems
+    \item Real-time alerting for anomalous behavior
+    \item Compliance monitoring and audit trails
+    \item Performance monitoring with minimal overhead
+    \item Easy deployment and maintenance
+\end{itemize}
+
+\subsection{Use Case Diagrams}
+
+The system's functionality can be represented through several key use cases that illustrate user interactions.
+
+\subsubsection{Primary Use Cases}
+
+\textbf{UC1: Upload and Analyze Malware Sample}
+\begin{itemize}
+    \item \textit{Actor:} Security Researcher
+    \item \textit{Precondition:} User has a suspicious file to analyze
+    \item \textit{Main Flow:}
+    \begin{enumerate}
+        \item User accesses the web dashboard
+        \item User creates a new monitoring session
+        \item User uploads the suspicious file
+        \item System transfers file to agent environment
+        \item User starts monitoring
+        \item User executes the sample in noVNC viewer
+        \item System captures and displays real-time events
+        \item User analyzes the behavior through event logs
+        \item User stops monitoring and exports data
+    \end{enumerate}
+    \item \textit{Postcondition:} Analysis results are saved and available for export
+\end{itemize}
+
+\textbf{UC2: Monitor Real-Time System Events}
+\begin{itemize}
+    \item \textit{Actor:} Malware Analyst
+    \item \textit{Precondition:} Monitoring session is active
+    \item \textit{Main Flow:}
+    \begin{enumerate}
+        \item System captures file operations, process creation, and network traffic
+        \item Events are transmitted to backend in real-time
+        \item Backend stores events in database with timestamps
+        \item Frontend polls backend for new events
+        \item Dashboard displays events in categorized tables
+        \item User filters and searches events by criteria
+        \item User expands event details for deeper inspection
+    \end{enumerate}
+    \item \textit{Postcondition:} All events are visible to the user within 1-2 seconds
+\end{itemize}
+
+\textbf{UC3: Manage Monitoring Sessions}
+\begin{itemize}
+    \item \textit{Actor:} System Administrator
+    \item \textit{Precondition:} User has system access
+    \item \textit{Main Flow:}
+    \begin{enumerate}
+        \item User views list of existing sessions
+        \item User selects a session to resume or review
+        \item User can start, pause, or stop monitoring
+        \item User can view session statistics and summaries
+        \item User can delete old sessions to free resources
+    \end{enumerate}
+    \item \textit{Postcondition:} Session state is updated accordingly
+\end{itemize}
+
+\textbf{UC4: Export Analysis Data}
+\begin{itemize}
+    \item \textit{Actor:} Security Researcher
+    \item \textit{Precondition:} Monitoring session contains captured events
+    \item \textit{Main Flow:}
+    \begin{enumerate}
+        \item User selects export option from dashboard
+        \item User chooses export format (JSON, CSV)
+        \item User applies filters (time range, event type, process)
+        \item System generates export file
+        \item User downloads file for external analysis
+    \end{enumerate}
+    \item \textit{Postcondition:} Data is exported in requested format
+\end{itemize}
+
+\subsubsection{Administrative Use Cases}
+
+\textbf{UC5: Configure Monitoring Agents}
+\begin{itemize}
+    \item \textit{Actor:} System Administrator
+    \item \textit{Precondition:} Administrator access to agent configuration
+    \item \textit{Main Flow:}
+    \begin{enumerate}
+        \item Administrator accesses agent configuration
+        \item Administrator sets monitoring rules and filters
+        \item Administrator configures content extraction limits
+        \item Administrator selects which APIs to hook
+        \item System validates and applies configuration
+    \end{enumerate}
+    \item \textit{Postcondition:} Agents operate with new configuration
+\end{itemize}
+
+\textbf{UC6: Monitor System Performance}
+\begin{itemize}
+    \item \textit{Actor:} System Administrator
+    \item \textit{Precondition:} Monitoring is active
+    \item \textit{Main Flow:}
+    \begin{enumerate}
+        \item Administrator views agent health dashboard
+        \item System displays CPU, memory, and network usage
+        \item Administrator identifies performance bottlenecks
+        \item Administrator adjusts monitoring configuration if needed
+    \end{enumerate}
+    \item \textit{Postcondition:} System performance is optimized
+\end{itemize}
+
+\subsection{User Stories}
+
+User stories provide narrative descriptions of how users will interact with the system:
+
+\textbf{Story 1: Analyzing Suspicious Email Attachment}
+
+\textit{As a security researcher, I need to analyze a suspicious email attachment reported by a user. I upload the file through the web dashboard, create a monitoring session, and start the monitoring agents. I then execute the file in the integrated noVNC viewer and immediately see file operations appearing in the dashboard. The malware attempts to write to the startup folder and creates several registry entries for persistence. Within minutes, I have a complete behavioral profile including network communications to a command-and-control server. I export the analysis data as JSON to share with my team and integrate into our threat intelligence platform.}
+
+\textbf{Story 2: Investigating System Compromise}
+
+\textit{As a malware analyst, I'm investigating a potentially compromised system. I deploy the OS-Pulse agents to the target machine and start monitoring. The dashboard reveals an unusual process chain where a legitimate-looking application spawns multiple child processes that perform suspicious file operations in system directories. The network monitor shows encrypted traffic to an unknown IP address. I use the filtering capabilities to focus on events from this process tree and identify the initial infection vector. The detailed logs allow me to document the entire attack chain for the incident response report.}
+
+\textbf{Story 3: Routine Security Monitoring}
+
+\textit{As a system administrator, I use OS-Pulse to perform routine security monitoring of critical servers. I configure the agents to monitor specific directories and processes of interest. The real-time dashboard helps me quickly identify any unauthorized access attempts or suspicious activity. When I notice unusual file operations during off-hours, I can immediately review the details and take appropriate action. The session history allows me to review patterns over time and identify gradual changes in system behavior.}
+
+\subsection{Requirement Traceability}
+
+This section maps high-level requirements to specific system features:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Requirement ID} & \textbf{Feature} & \textbf{Use Case} \\
+\hline
+FR1 & Real-time monitoring & UC2 \\
+FR2 & Session management & UC3 \\
+FR3 & File operation monitoring & UC1, UC2 \\
+FR4 & Process monitoring & UC1, UC2 \\
+FR5 & Network monitoring & UC1, UC2 \\
+FR6 & Dynamic injection & UC1, UC2 \\
+FR7 & Web dashboard & All use cases \\
+FR8 & Data export & UC4 \\
+FR9 & Agent coordination & UC5 \\
+FR10 & Data persistence & UC3, UC4 \\
+\hline
+\end{tabular}
+\caption{Requirement Traceability Matrix}
+\end{table}
+
+This comprehensive requirements analysis demonstrates that OS-Pulse addresses real user needs with well-defined functional and non-functional requirements. The feasibility study confirms that the project is technically sound, operationally practical, and economically viable. The use cases and user stories provide clear guidance for system design and implementation, ensuring that the final product meets the expectations of its target users.

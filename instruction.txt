@@ -1,0 +1,109 @@
+I am working on this project. I have Latex file. Generate short chapter7.tex (Testing and Quality Assurance) and chapter8.tex (Results and Discussion)
+
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+% Page style
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[C]{\thepage}
+
+% Title formatting
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries\centering}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titlespacing*{\chapter}{0pt}{-20pt}{40pt}
+
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    {\LARGE\bfseries University of Rajshahi\par}
+    \vspace{0.5cm}
+    {\large Department of Computer Science and Engineering\par}
+    \vspace{2cm}
+    
+    {\Huge\bfseries OS-Pulse: Real-Time System Monitoring Platform\par}
+    \vspace{1.5cm}
+    
+    {\Large A Project Report\par}
+    \vspace{0.5cm}
+    {\large Submitted in Partial Fulfillment of the Requirements\par}
+    {\large for the Degree of\par}
+    \vspace{0.5cm}
+    {\Large\bfseries Bachelor of Science in Computer Science and Engineering\par}
+    \vspace{2cm}
+    
+    {\large\bfseries Submitted By:\par}
+    \vspace{0.3cm}
+    {\large Jahangir Alam\par}
+    {\large Student ID: 2011076129\par}
+    {\large Session: 2019-20\par}
+    \vspace{2cm}
+    
+    {\large\today\par}
+\end{titlepage}
+
+\input{acknowledgement}
+
+\vspace{1cm}
+\begin{flushright}
+Jahangir Alam\\
+Student ID: 2011076129\\
+Session: 2019-20\\
+Department of Computer Science and Engineering\\
+University of Rajshahi
+\end{flushright}
+
+\input{abstract}
+
+% Table of Contents
+\tableofcontents
+\input{chapter1}
+\input{chapter2}
+\input{chapter3}
+\input{chapter4}
+\input{chapter5}
+\input{chapter6}
+
+\chapter{Testing and Quality Assurance}
+\section{Testing Strategy}
+\section{Unit Testing}
+\section{Integration Testing}
+\section{System Testing}
+\section{Performance Testing}
+\section{Results and Analysis}
+
+\chapter{Results and Discussion}
+\section{System Functionality}
+\section{Performance Analysis}
+\section{User Workflow Demonstration}
+\section{Comparison with Existing Solutions}
+\section{Limitations and Challenges}
+
+\chapter{Conclusion and Future Work}
+\section{Summary of Achievements}
+\section{Contributions}
+\section{Limitations}
+\section{Future Enhancement Opportunities}
+\section{Concluding Remarks}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\appendix
+\chapter{Code Samples}
+\chapter{User Manual}
+\chapter{System Screenshots}
+\chapter{API Documentation}
+
+\end{document}
