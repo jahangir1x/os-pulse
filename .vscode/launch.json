@@ -8,6 +8,13 @@
             "program": "${workspaceFolder}/backend"
         },
         {
+            "type": "debugpy",
+            "name": "Python agent-srv-py",
+            "request": "launch",
+            "program": "agent/agent-srv-py/app.py",
+            "console": "integratedTerminal",
+        },
+        {
             "name": "Launch agent-srv",
             "type": "go",
             "request": "launch",
@@ -24,6 +31,17 @@
                 "spawn",
                 "--executable",
                 "C:\\Windows\\System32\\notepad.exe"
+            ]
+        },
+        {
+            "type": "debugpy",
+            "name": "Python frida-controller - Attach to All",
+            "request": "launch",
+            "program": "agent/controller/main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "attach",
+                "--all"
             ]
         },
         {

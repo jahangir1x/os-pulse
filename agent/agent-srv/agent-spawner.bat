@@ -1,0 +1,1 @@
+python C:\Users\rocky\Desktop\dev\sandbox\os-pulse\agent\controller\main.py 

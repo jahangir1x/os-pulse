@@ -34,7 +34,7 @@ func main() {
 	// Start server
 	port := os.Getenv("AGENT_PORT")
 	if port == "" {
-		port = "8080"
+		port = "7000"
 	}
 
 	log.Printf("Agent service starting on port %s", port)

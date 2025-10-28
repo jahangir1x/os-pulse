@@ -1,19 +1,24 @@
 """
 Frida controller for managing process injection and message handling
 """
+from __future__ import annotations
+
 import os
 import sys
 import time
 import signal
 import threading
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, TYPE_CHECKING
 
 import frida
 import psutil
 from colorama import Fore, Style, init
 
 from message_handler import MessageHandler
+
+if TYPE_CHECKING:
+    from frida.core import Session, Script
 
 # Initialize colorama
 init(autoreset=True)
@@ -30,8 +35,8 @@ class FridaController:
             agent_script_path: Path to the compiled agent script (_agent.js)
         """
         self.agent_script_path = agent_script_path or self._find_agent_script()
-        self.sessions: List[frida.Session] = []  # Support multiple sessions
-        self.scripts: List[frida.Script] = []  # Support multiple scripts
+        self.sessions: List[Session] = []  # Support multiple sessions
+        self.scripts: List[Script] = []  # Support multiple scripts
         self.message_handler = MessageHandler()
         self.running = False
         
@@ -248,7 +253,7 @@ class FridaController:
         
         return success_count > 0
     
-    def _create_and_load_script(self, session: frida.Session) -> None:
+    def _create_and_load_script(self, session: Session) -> None:
         """Create and load the agent script"""
         try:
             # Create script
