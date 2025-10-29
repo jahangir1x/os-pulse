@@ -98,15 +98,15 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                         {formatTimestamp(event.data.timestamp)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={event.data?.method?.toUpperCase() === 'POST' ? 'default' : 'secondary'} className="hover-scale">
-                          {event.data?.method?.toUpperCase()}
+                        <Badge variant={event.data?.request?.method?.toUpperCase() === 'POST' ? 'default' : 'secondary'} className="hover-scale">
+                          {event.data?.request?.method?.toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate" title={event.data.url}>
-                        {event.data.url}
+                      <TableCell className="max-w-xs truncate" title={event.data?.request?.url ? event.data.request.url : 'Unknown'}>
+                        {event.data?.request?.url? event.data.request.url : 'Unknown'}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatBytes(event.data.bytesTransferred)}
+                        {formatBytes(event.data?.request?.body?.size? event.data.request.body.size : 0)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">

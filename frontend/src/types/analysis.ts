@@ -18,12 +18,21 @@ export interface FileOperationEvent {
 export interface HttpNetworkEvent {
   event_type: 'http_network_operation';
   data: {
-    base64RequestBody: string;
-    bytesTransferred: number;
-    base64Response: string;
+    request: {
+      method: string;
+      url: string;
+      body: {
+        content_b64: string;
+        size: number;
+      }
+    },
+    response: {
+      body: {
+        content_b64: string;
+        size: number;
+      }
+    },
     timestamp: string;
-    url: string;
-    method: string;
     metadata: {
       processName: string;
       processId: number;
