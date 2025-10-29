@@ -131,6 +131,12 @@ func (s *EventService) forwardStartMonitorRequest(req *models.StartMonitorReques
 		return fmt.Errorf("failed to get session: %w", err)
 	}
 
+	// Truncate events table
+	err = s.eventRepo.TruncateEvents()
+	if err != nil {
+		return fmt.Errorf("failed to truncate events: %w", err)
+	}
+
 	// Add file name to the request
 	req.FileName = session.FileName
 

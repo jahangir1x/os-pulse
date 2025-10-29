@@ -220,7 +220,8 @@ class FridaController:
         
         # Filter out system critical processes and development tools
         excluded_names = [
-            'System', 'csrss.exe', 'smss.exe', 'wininit.exe', 'services.exe',
+            'System Idle Process', '', 'Registry', 'svchost.exe', 'dllhost.exe', 'conhost.exe',
+            'System', 'csrss.exe', 'smss.exe', 'wininit.exe', 'services.exe', 'zrok.exe', 'tshark.exe', 'mitmproxy.exe', 'mitmdump.exe',
             'python.exe', 'go.exe', 'cloudflared.exe'
         ]
         safe_processes = [p for p in processes if p['name'] not in excluded_names and p['pid'] != os.getpid()]

@@ -71,8 +71,8 @@
             "console": "integratedTerminal",
             "args": [
                 "attach",
-                "--pid",
-                "15124"
+                "--pids",
+                "13128"
             ]
         },
         {
