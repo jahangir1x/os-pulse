@@ -18,25 +18,33 @@ export interface FileOperationEvent {
 export interface HttpNetworkEvent {
   event_type: 'http_network_operation';
   data: {
-    request: {
-      method: string;
-      url: string;
-      body: {
-        content_b64: string;
-        size: number;
-      }
-    },
-    response: {
-      body: {
-        content_b64: string;
-        size: number;
-      }
-    },
-    timestamp: string;
-    metadata: {
+      metadata: {
       processName: string;
       processId: number;
     };
+    kind: string;
+    client: any;
+    server: {
+      ip: string | null;
+    };
+    request: {
+      method: string;
+      url: string;
+      scheme: string;
+      host: string;
+      port: number;
+      path: string;
+      http_version: string;
+      headers: Record<string, string>;
+      body: {
+        type: string;
+        size: number;
+        truncated: boolean;
+      };
+    };
+    response: any;
+    timestamp_ms: number;
+    timestamp: string;
   };
 }
 

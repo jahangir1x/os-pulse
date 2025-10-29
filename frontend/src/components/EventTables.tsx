@@ -29,6 +29,9 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
   console.log('EventTables - Network events:', rawNetworkEvents.length);
   console.log('EventTables - File events:', fileEvents.length);
 
+  console.log('HTTP Events:', httpEvents);
+  console.log('File Events:', fileEvents);
+
   return (
     <Card className="h-full flex flex-col hover-lift">
       <CardContent className="flex-1 overflow-hidden p-4">
@@ -90,28 +93,28 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                 <TableBody className="animate-stagger">
                   {httpEvents.map((event, index) => (
                     <TableRow 
-                      key={`http-${event.data.timestamp}-${index}`}
+                      key={`http-${event.data.timestamp_ms}-${index}`}
                       className="cursor-pointer hover:bg-muted/70 transition-colors new-event-row"
                       onClick={() => onEventSelect?.(event)}
                     >
                       <TableCell className="font-mono text-xs">
-                        {formatTimestamp(event.data.timestamp)}
+                        {formatTimestamp(new Date(event.data.timestamp_ms).toISOString())}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={event.data?.request?.method?.toUpperCase() === 'POST' ? 'default' : 'secondary'} className="hover-scale">
-                          {event.data?.request?.method?.toUpperCase()}
+                        <Badge variant={event.data.request.method.toUpperCase() === 'POST' ? 'default' : 'secondary'} className="hover-scale">
+                          {event.data.request.method.toUpperCase() || 'UNKNOWN'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate" title={event.data?.request?.url ? event.data.request.url : 'Unknown'}>
-                        {event.data?.request?.url? event.data.request.url : 'Unknown'}
+                      <TableCell className="max-w-xs truncate" title={event.data?.request?.url || 'Unknown'}>
+                        {event.data?.request?.url || 'Unknown'}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatBytes(event.data?.request?.body?.size? event.data.request.body.size : 0)}
+                        {formatBytes(event.data?.request?.body?.size || 0)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-xs">{event.data?.metadata?.processName ? event.data.metadata.processName : 'Unknown'}</span>
-                          <span className="text-xs text-muted-foreground">PID: {event.data?.metadata?.processId ? event.data.metadata.processId : 'Unknown'}</span>
+                          <span className="text-xs text-muted-foreground">N/A</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         </div>
                       </TableCell>
                     </TableRow>
