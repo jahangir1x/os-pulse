@@ -33,6 +33,35 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
     setZoomLevel(1.0); // Reset to 100%
   };
 
+  // Download report handler
+  const handleDownloadReport = async () => {
+    try {
+      const response = await fetch('http://localhost:3003/api/events/export');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to download report: ${response.statusText}`);
+      }
+      
+      // Get the JSON blob
+      const blob = await response.blob();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `os-pulse-report-${sessionData.sessionId}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download report:', err);
+      setError(err instanceof Error ? err.message : 'Failed to download report');
+    }
+  };
+
   // Handle monitoring state changes
   const handleMonitoringStateChange = (monitoring: boolean) => {
     setIsMonitoring(monitoring);
@@ -203,6 +232,18 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
           
           {/* Right - Status indicators */}
           <div className="flex items-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
+            {isMonitoring && (
+              <button
+                onClick={handleDownloadReport}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all hover-scale"
+                title="Download events report"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download Report
+              </button>
+            )}
             <div className="flex items-center gap-2 text-sm">
               <div className="relative">
                 <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-400'}`}></div>

@@ -163,3 +163,16 @@ func (r *EventRepository) TruncateEvents() error {
 	}
 	return nil
 }
+
+// GetAllEventsForExport retrieves all events without pagination for export
+func (r *EventRepository) GetAllEventsForExport() ([]*models.Event, error) {
+	var events []*models.Event
+
+	result := r.db.Order("timestamp ASC").Find(&events)
+
+	if result.Error != nil {
+		return nil, fmt.Errorf("failed to query events for export: %w", result.Error)
+	}
+
+	return events, nil
+}

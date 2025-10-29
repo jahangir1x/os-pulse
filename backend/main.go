@@ -69,6 +69,7 @@ func main() {
 
 	// Event retrieval endpoints (batch-based, no session required)
 	e.GET("/api/events/:sessionId", frontendHandler.GetEvents) // Get unsent events in batches
+	e.GET("/api/events/export", eventHandler.ExportEvents)     // Export all events as JSON
 	e.POST("/api/list-processes", frontendHandler.ListProcesses)
 
 	// Start server

@@ -108,3 +108,16 @@ func (h *EventHandler) ReceiveNetEvent(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
 }
+
+func (h *EventHandler) ExportEvents(c echo.Context) error {
+	events, err := h.eventService.ExportAllEvents()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to export events"})
+	}
+
+	// Set headers for file download
+	c.Response().Header().Set("Content-Type", "application/json")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=events-export.json")
+
+	return c.JSON(http.StatusOK, events)
+}

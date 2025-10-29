@@ -95,6 +95,10 @@ func (s *EventService) CreateNetworkEvents(sessionID string, networkEvent *model
 	return s.eventRepo.CreateNetworkEvents(sessionID, networkEvent)
 }
 
+func (s *EventService) ExportAllEvents() ([]*models.Event, error) {
+	return s.eventRepo.GetAllEventsForExport()
+}
+
 func (s *EventService) StartMonitoring(req *models.StartMonitorRequest) error {
 	// Update session monitoring started time
 	err := s.sessionRepo.UpdateSessionMonitoringStarted(req.SessionID, time.Now())
