@@ -21,10 +21,14 @@ function App() {
     setSessionData(data)
   }
 
+  const handleBackToUpload = () => {
+    setSessionData(null)
+  }
+
   return (
     <>
       {sessionData ? (
-        <AnalysisDashboard sessionData={sessionData} />
+        <AnalysisDashboard sessionData={sessionData} onBackToUpload={handleBackToUpload} />
       ) : (
         <FileUpload onSessionCreated={handleSessionCreated} />
       )}

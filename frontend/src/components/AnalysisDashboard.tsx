@@ -8,9 +8,10 @@ import type { Event, Process, SessionData } from '../types/analysis';
 
 interface AnalysisDashboardProps {
   sessionData: SessionData;
+  onBackToUpload: () => void;
 }
 
-export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
+export function AnalysisDashboard({ sessionData, onBackToUpload }: AnalysisDashboardProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -211,7 +212,11 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
         {/* Main row - Title, monitoring controls, and status */}
         <div className="flex items-center justify-between">
           <div className="animate-fade-in">
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-primary to-accent">
+            <h1 
+              className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-primary to-accent cursor-pointer hover-scale transition-all"
+              onClick={onBackToUpload}
+              title="Back to file upload"
+            >
               OS-Pulse Dashboard
             </h1>
             <p className="text-muted-foreground flex items-center gap-2">

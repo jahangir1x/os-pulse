@@ -106,13 +106,15 @@ export function FileUpload({ onSessionCreated }: FileUploadProps) {
               />
               {file && (
                 <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg animate-slide-in-up">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <svg className="w-4 h-4 text-primary animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="text-sm text-muted-foreground flex items-start gap-2">
+                    <svg className="w-4 h-4 text-primary animate-bounce-slow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="font-medium">{file.name}</span>
-                    <span className="text-xs text-muted-foreground/70">({(file.size / 1024).toFixed(1)} KB)</span>
-                  </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate" title={file.name}>{file.name}</p>
+                      <p className="text-xs text-muted-foreground/70">({(file.size / 1024).toFixed(1)} KB)</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
