@@ -171,18 +171,23 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
   return (
     <div className="h-screen flex flex-col p-4 gap-4 bg-background overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col gap-3 shrink-0">
+      <div className="flex flex-col gap-3 shrink-0 animate-slide-in-down">
         {/* Main row - Title, monitoring controls, and status */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">OS-Pulse Dashboard</h1>
-            <p className="text-muted-foreground">
-              Session: {sessionData.sessionId}
+          <div className="animate-fade-in">
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-primary to-accent">
+              OS-Pulse Dashboard
+            </h1>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-xs font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-glow-pulse"></span>
+                Session: {sessionData.sessionId}
+              </span>
             </p>
           </div>
           
           {/* Center - Monitoring controls */}
-          <div className="flex-1 flex justify-center px-8">
+          <div className="flex-1 flex justify-center px-8 animate-scale-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
             <MonitoringControls 
               sessionData={sessionData} 
               onMonitoringStateChange={handleMonitoringStateChange}
@@ -190,18 +195,33 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
           </div>
           
           {/* Right - Status indicators */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 animate-fade-in" style={{ animationDelay: '0.3s', opacity: 0 }}>
             <div className="flex items-center gap-2 text-sm">
-              <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></div>
+              <div className="relative">
+                <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                {isMonitoring && <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-500 animate-ping"></div>}
+              </div>
               {isMonitoring ? (
-                isLoading ? 'Loading...' : `${events.length} events`
+                isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="spinner w-3 h-3 border-2"></span>
+                    Loading...
+                  </span>
+                ) : (
+                  <span className="font-medium">
+                    <span className="stat-value">{events.length}</span> events
+                  </span>
+                )
               ) : (
                 'Ready to monitor'
               )}
             </div>
             {isMonitoring && (
-              <div className="text-xs text-muted-foreground">
-                Last update: {lastUpdate.toLocaleTimeString()}
+              <div className="text-xs text-muted-foreground flex items-center gap-1 animate-fade-in">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {lastUpdate.toLocaleTimeString()}
               </div>
             )}
             <ThemeToggle />
@@ -211,28 +231,36 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
 
       {/* Error display */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-3 rounded-md">
-          {error}
+        <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-3 rounded-md flex items-start gap-2 animate-shake">
+          <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
       {/* Main content grid */}
-      <div className="flex-1 grid gap-4 min-h-0" style={{ gridTemplateColumns: isMonitoring ? '3fr 1fr' : '1fr' }}>
+      <div className="flex-1 grid gap-4 min-h-0 animate-stagger" style={{ gridTemplateColumns: isMonitoring ? '3fr 1fr' : '1fr' }}>
         {/* Left side - VNC area (top) and Event tables (bottom) */}
         <div className="flex flex-col gap-4">
           {/* VNC Area with zoom controls */}
           <div className="flex-1">
-            <Card className="h-full">
+            <Card className="h-full dashboard-card hover-lift">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle>Virtual Machine Display</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Virtual Machine Display
+                </CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground font-mono">
                     {Math.round(zoomLevel * 100)}%
                   </span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
                     <button
                       onClick={handleZoomOut}
-                      className="p-1 rounded hover:bg-muted transition-colors"
+                      className="p-1.5 rounded hover:bg-background transition-all hover-scale"
                       title="Zoom Out"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -243,14 +271,14 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
                     </button>
                     <button
                       onClick={handleResetZoom}
-                      className="px-2 py-1 text-xs rounded hover:bg-muted transition-colors"
+                      className="px-2 py-1 text-xs rounded hover:bg-background transition-all hover-scale font-medium"
                       title="Reset Zoom"
                     >
-                      1:1
+                      Reset
                     </button>
                     <button
                       onClick={handleZoomIn}
-                      className="p-1 rounded hover:bg-muted transition-colors"
+                      className="p-1.5 rounded hover:bg-background transition-all hover-scale"
                       title="Zoom In"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -266,7 +294,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
               <CardContent className="w-full h-full overflow-hidden">
                 <iframe
                   src="http://127.0.0.1:6080/vnc.html"
-                  className="border-0 w-full h-full"
+                  className="border-0 w-full h-full rounded-lg"
                   style={{ 
                     transform: `scale(${zoomLevel})`,
                     transformOrigin: 'top left',
@@ -282,7 +310,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
 
           {/* Event Tables - only show when monitoring is active */}
           {isMonitoring && (
-            <div className="h-70">
+            <div className="h-70 dashboard-card" style={{ animationDelay: '0.2s' }}>
               <EventTables events={events} onEventSelect={setSelectedEvent} />
             </div>
           )}
@@ -290,7 +318,7 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
 
         {/* Right sidebar - Process list - only show when monitoring is active */}
         {isMonitoring && (
-          <div>
+          <div className="dashboard-card" style={{ animationDelay: '0.3s' }}>
             <ProcessList 
               processes={processes} 
               selectedEvent={selectedEvent}

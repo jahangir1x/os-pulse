@@ -30,7 +30,7 @@
             "args": [
                 "spawn",
                 "--executable",
-                "C:\\Windows\\System32\\notepad.exe"
+                "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             ]
         },
         {
