@@ -7,6 +7,7 @@ export interface FileOperationEvent {
     bytesTransferred: number;
     content: string;
     timestamp: string;
+    timestamp_ms: number;
     operation: string;
     metadata: {
       processName: string;
@@ -37,12 +38,17 @@ export interface HttpNetworkEvent {
       http_version: string;
       headers: Record<string, string>;
       body: {
+        content_b64: string;
         type: string;
         size: number;
         truncated: boolean;
       };
     };
-    response: any;
+    response: {
+      body: {
+        content_b64: string;
+      }
+    }
     timestamp_ms: number;
     timestamp: string;
   };
@@ -51,12 +57,13 @@ export interface HttpNetworkEvent {
 export interface RawNetworkEvent {
   event_type: 'raw_network_operation';
   data: {
-    request: string;
-    bytesTransferred: number;
-    response: string;
     timestamp: string;
-    host: string;
+    dst: string;
     protocol: string;
+    length: number;
+    process: string;
+    info: string;
+    timestamp_ms: number;
     metadata: {
       processName: string;
       processId: number;
@@ -70,6 +77,7 @@ export interface ProcessCreationEvent {
     filePath: string;
     args: string;
     timestamp: string;
+    timestamp_ms: number;
     metadata: {
       processName: string;
       processId: number;

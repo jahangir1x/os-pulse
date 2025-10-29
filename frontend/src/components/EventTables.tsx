@@ -78,10 +78,10 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="http" className="flex-1 overflow-hidden animate-fade-in">
-            <div className="h-full overflow-y-auto pr-2 scroll-container">
+          <TabsContent value="http" className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
               <Table>
-                <TableHeader className="sticky top-0 bg-background z-10">
+                <TableHeader>
                   <TableRow>
                     <TableHead>Time</TableHead>
                     <TableHead>Method</TableHead>
@@ -90,11 +90,11 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                     <TableHead>Process</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="animate-stagger">
+                <TableBody>
                   {httpEvents.map((event, index) => (
                     <TableRow 
                       key={`http-${event.data.timestamp_ms}-${index}`}
-                      className="cursor-pointer hover:bg-muted/70 transition-colors new-event-row"
+                      className="cursor-pointer hover:bg-muted/70"
                       onClick={() => onEventSelect?.(event)}
                     >
                       <TableCell className="font-mono text-xs">
@@ -122,19 +122,15 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                 </TableBody>
               </Table>
               {httpEvents.length === 0 && (
-                <div className="text-center text-muted-foreground py-12 animate-fade-in flex flex-col items-center gap-3">
-                  <svg className="w-12 h-12 opacity-50 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                  <p>No HTTP requests detected yet</p>
-                  <p className="text-xs">Waiting for network activity...</p>
+                <div className="text-center text-muted-foreground py-8">
+                  No HTTP requests detected yet
                 </div>
               )}
             </div>
           </TabsContent>
 
-          <TabsContent value="connections" className="flex-1 overflow-hidden animate-fade-in">
-            <div className="h-full overflow-y-auto pr-2 scroll-container">
+          <TabsContent value="connections" className="flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto pr-2">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -160,14 +156,14 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                           {event.data.protocol.toUpperCase()}
                         </Badge>
                       </TableCell>
-                      <TableCell>{event.data.host}</TableCell>
+                      <TableCell>{event.data?.dst}</TableCell>
                       <TableCell className="text-right">
-                        {formatBytes(event.data.bytesTransferred)}
+                        {formatBytes(event.data?.length)}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-xs">{event.data.metadata.processName}</span>
-                          <span className="text-xs text-muted-foreground">PID: {event.data.metadata.processId}</span>
+                          <span className="text-xs">{event.data?.metadata?.processName}</span>
+                          <span className="text-xs text-muted-foreground">PID: {event.data?.metadata?.processId}</span>
                         </div>
                       </TableCell>
                     </TableRow>

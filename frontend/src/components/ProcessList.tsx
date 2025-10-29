@@ -65,7 +65,7 @@ export function ProcessList({ processes, selectedEvent, onEventSelect, onEventDe
         <div className="space-y-3">
           <div>
             <label className="text-xs font-medium text-muted-foreground">Timestamp</label>
-            <p className="text-sm font-mono">{formatTimestamp(data.timestamp)}</p>
+            <p className="text-sm font-mono">{event_type === 'http_network_operation' ? formatTimestamp(new Date(data.timestamp_ms).toISOString()) : formatTimestamp(data.timestamp)}</p>
           </div>
 
           <div>
@@ -98,27 +98,27 @@ export function ProcessList({ processes, selectedEvent, onEventSelect, onEventDe
             <>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Method</label>
-                <p className="text-sm">{data.method?.toUpperCase()}</p>
+                <p className="text-sm">{data.request?.method?.toUpperCase()}</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">URL</label>
-                <p className="text-sm break-all">{data.url}</p>
+                <p className="text-sm break-all">{data.request?.url}</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Request Body (Base64)</label>
                 <p className="text-xs font-mono bg-muted p-2 rounded break-all max-h-20 overflow-y-auto">
-                  {data.base64RequestBody || 'Empty'}
+                  {data.request?.body?.content_b64 || 'Empty'}
                 </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Response (Base64)</label>
                 <p className="text-xs font-mono bg-muted p-2 rounded break-all max-h-20 overflow-y-auto">
-                  {data.base64Response || 'Empty'}
+                  {data.response?.body?.content_b64 || 'Empty'}
                 </p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Bytes Transferred</label>
-                <p className="text-sm">{formatBytes(data.bytesTransferred)}</p>
+                <p className="text-sm">{formatBytes(data.request?.body?.size)}</p>
               </div>
             </>
           )}
@@ -131,19 +131,19 @@ export function ProcessList({ processes, selectedEvent, onEventSelect, onEventDe
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Host</label>
-                <p className="text-sm">{data.host}</p>
+                <p className="text-sm">{data?.dst}</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Request (Hex)</label>
-                <p className="text-xs font-mono bg-muted p-2 rounded break-all">{data.request}</p>
+                <p className="text-xs font-mono bg-muted p-2 rounded break-all">{data?.info}</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Response (Hex)</label>
-                <p className="text-xs font-mono bg-muted p-2 rounded break-all">{data.response}</p>
+                <p className="text-xs font-mono bg-muted p-2 rounded break-all"></p>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Bytes Transferred</label>
-                <p className="text-sm">{formatBytes(data.bytesTransferred)}</p>
+                <p className="text-sm">{formatBytes(data?.length)}</p>
               </div>
             </>
           )}
