@@ -1,6 +1,13 @@
 {
     "configurations": [
         {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Run frontend",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend",
+        },
+        {
             "name": "Launch backend",
             "type": "go",
             "request": "launch",

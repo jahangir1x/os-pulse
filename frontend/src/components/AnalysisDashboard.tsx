@@ -136,6 +136,13 @@ export function AnalysisDashboard({ sessionData }: AnalysisDashboardProps) {
         
         const newEvents = await response.json();
         console.log('Received events:', newEvents);
+
+        if (newEvents.length === 0) {
+          // return early if no new events
+          console.log('No new events received');
+          setIsLoading(false);
+          return;
+        }
         
         if (Array.isArray(newEvents)) {
           console.log('Appending new events, count:', newEvents.length);

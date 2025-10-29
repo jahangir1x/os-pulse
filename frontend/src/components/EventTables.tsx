@@ -98,8 +98,8 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                         {formatTimestamp(event.data.timestamp)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={event.data.method.toUpperCase() === 'POST' ? 'default' : 'secondary'} className="hover-scale">
-                          {event.data.method.toUpperCase()}
+                        <Badge variant={event.data?.method?.toUpperCase() === 'POST' ? 'default' : 'secondary'} className="hover-scale">
+                          {event.data?.method?.toUpperCase()}
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-xs truncate" title={event.data.url}>
@@ -110,8 +110,8 @@ export function EventTables({ events, onEventSelect }: EventTablesProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-xs">{event.data.metadata.processName}</span>
-                          <span className="text-xs text-muted-foreground">PID: {event.data.metadata.processId}</span>
+                          <span className="text-xs">{event.data?.metadata?.processName ? event.data.metadata.processName : 'Unknown'}</span>
+                          <span className="text-xs text-muted-foreground">PID: {event.data?.metadata?.processId ? event.data.metadata.processId : 'Unknown'}</span>
                         </div>
                       </TableCell>
                     </TableRow>
