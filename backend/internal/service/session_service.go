@@ -114,9 +114,9 @@ func (s *SessionService) uploadFileToAgent(fileName string, fileContent []byte) 
 
 func (s *SessionService) GetMonitorModes() []*models.MonitorMode {
 	return []*models.MonitorMode{
-		{ID: 1, Mode: "All Processes"},
+		// {ID: 1, Mode: "All Processes"},
 		{ID: 2, Mode: "Specific Processes"},
-		{ID: 3, Mode: "Spawn Uploaded"},
+		// {ID: 3, Mode: "Spawn Uploaded"},
 	}
 }
 
