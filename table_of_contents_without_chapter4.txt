@@ -1,0 +1,177 @@
+ 1 Introduction 10
+ 1.1 BackgroundandMotivation . . . . . . . . . . . . . . . . . . . . . . . . . 10
+ 1.2 ProblemStatement . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+ 1.3 Objectives . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+ 1.4 ScopeandLimitations . . . . . . . . . . . . . . . . . . . . . . . . . . . . 15
+ 1.5 OrganizationoftheReport. . . . . . . . . . . . . . . . . . . . . . . . . . 17
+ 2 LiteratureReview 19
+ 2.1 SystemMonitoringToolsandTechniques . . . . . . . . . . . . . . . . . . 19
+ 2.1.1 TraditionalSystemMonitoringApproaches . . . . . . . . . . . . . 19
+ 2.1.2 ModernSystemMonitoringTools . . . . . . . . . . . . . . . . . . 21
+ 2.1.3 NetworkMonitoringTechniques . . . . . . . . . . . . . . . . . . . 22
+ 2.2 DynamicInstrumentationFrameworks . . . . . . . . . . . . . . . . . . . 23
+ 2.2.1 FridaFramework . . . . . . . . . . . . . . . . . . . . . . . . . . . 23
+ 2.2.2 OtherDynamicInstrumentationFrameworks. . . . . . . . . . . . 24
+ 2.3 Web-basedMonitoringSolutions. . . . . . . . . . . . . . . . . . . . . . . 25
+ 2.3.1 ModernWebMonitoringArchitectures . . . . . . . . . . . . . . . 26
+ 2.3.2 MonitoringDashboardTechnologies . . . . . . . . . . . . . . . . . 27
+ 2.3.3 CaseStudiesofWeb-BasedMonitoringPlatforms . . . . . . . . . 28
+ 2.4 SecurityAnalysisPlatforms . . . . . . . . . . . . . . . . . . . . . . . . . 29
+ 2.4.1 SandboxandMalwareAnalysisSystems . . . . . . . . . . . . . . 29
+ 2.4.2 APIMonitoringandBehavioralAnalysisTools . . . . . . . . . . 30
+ 2.4.3 NetworkAnalysisforSecurityResearch. . . . . . . . . . . . . . . 31
+ 2.5 RelatedWorkandComparativeAnalysis . . . . . . . . . . . . . . . . . . 31
+ 2.5.1 AcademicResearchProjects . . . . . . . . . . . . . . . . . . . . . 32
+ 2.5.2 CommercialSolutionsandProducts . . . . . . . . . . . . . . . . . 33
+ 2.5.3 ComparativeAnalysisandPositioning . . . . . . . . . . . . . . . 34
+ 2.5.4 IdentifiedGapsandOS-PulseContributions . . . . . . . . . . . . 34
+ 2.5.5 Summary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 35
+ 4
+3 SystemAnalysisandRequirements 36
+ 3.1 RequirementAnalysis. . . . . . . . . . . . . . . . . . . . . . . . . . . . . 36
+ 3.1.1 FunctionalRequirements . . . . . . . . . . . . . . . . . . . . . . . 36
+ 3.1.2 Non-functionalRequirements . . . . . . . . . . . . . . . . . . . . 39
+ 3.2 FeasibilityStudy . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 41
+ 3.2.1 TechnicalFeasibility . . . . . . . . . . . . . . . . . . . . . . . . . 42
+ 3.2.2 OperationalFeasibility . . . . . . . . . . . . . . . . . . . . . . . . 43
+ 3.2.3 EconomicFeasibility . . . . . . . . . . . . . . . . . . . . . . . . . 46
+ 3.3 UserRequirementsandUseCases . . . . . . . . . . . . . . . . . . . . . . 48
+ 3.3.1 UserIdentification . . . . . . . . . . . . . . . . . . . . . . . . . . 48
+ 3.3.2 UseCaseDiagrams . . . . . . . . . . . . . . . . . . . . . . . . . . 49
+ 3.3.3 UserStories . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 52
+ 3.3.4 RequirementTraceability. . . . . . . . . . . . . . . . . . . . . . . 52
+
+
+
+
+
+ 
+ 5 TechnologyStackandTools 93
+ 5.1 FrontendTechnologies . . . . . . . . . . . . . . . . . . . . . . . . . . . . 93
+ 5
+5.1.1 React18 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 93
+ 5.1.2 TypeScript . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 93
+ 5.1.3 TailwindCSS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 94
+ 5.1.4 Vite . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 94
+ 5.1.5 noVNC . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 95
+ 5.2 BackendTechnologies . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 95
+ 5.2.1 Go1.21+ . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 95
+ 5.2.2 EchoFramework . . . . . . . . . . . . . . . . . . . . . . . . . . . 96
+ 5.2.3 GORM. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 96
+ 5.2.4 PostgreSQL . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 97
+ 5.3 AgentandMonitoringTechnologies . . . . . . . . . . . . . . . . . . . . . 97
+ 5.3.1 FridaFramework . . . . . . . . . . . . . . . . . . . . . . . . . . . 97
+ 5.3.2 Python3.8+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 98
+ 5.3.3 TypeScriptforFridaScripts . . . . . . . . . . . . . . . . . . . . . 98
+ 5.3.4 WindowsAPI . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 98
+ 5.4 DevelopmentandDeploymentTools. . . . . . . . . . . . . . . . . . . . . 99
+ 5.4.1 Docker . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 99
+ 5.4.2 Git . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 99
+ 5.4.3 VisualStudioCode . . . . . . . . . . . . . . . . . . . . . . . . . . 100
+ 5.4.4 PackageManagers . . . . . . . . . . . . . . . . . . . . . . . . . . 100
+ 5.4.5 AdditionalDevelopmentTools . . . . . . . . . . . . . . . . . . . . 100
+ 5.5 TechnologySelectionRationale . . . . . . . . . . . . . . . . . . . . . . . 101
+ 5.5.1 BackendLanguageSelection:Govs.Node.jsvs.Python . . . . . 101
+ 5.5.2 DatabaseSelection:PostgreSQLvs.MongoDBvs.MySQL. . . . 101
+ 5.5.3 FrontendFramework:Reactvs.Vuevs.Angular . . . . . . . . . 102
+ 5.5.4 Dynamic Instrumentation: Fridavs. DLLInjectionvs. Kernel
+ Drivers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 102
+ 5.5.5 StylingApproach:Tailwindvs.CSS-in-JSvs.TraditionalCSS . . 102
+ 5.5.6 BuildTool:Vitevs.Webpackvs.CreateReactApp . . . . . . . 103
+ 5.5.7 TechnologyIntegrationConsiderations . . . . . . . . . . . . . . . 103
+ 6 Implementation 104
+ 6.1 BackendImplementation . . . . . . . . . . . . . . . . . . . . . . . . . . . 104
+ 6.1.1 APIDevelopment . . . . . . . . . . . . . . . . . . . . . . . . . . . 104
+ 6.1.2 DatabaseIntegration . . . . . . . . . . . . . . . . . . . . . . . . . 106
+ 6.1.3 SessionManagement . . . . . . . . . . . . . . . . . . . . . . . . . 107
+ 6.2 AgentSystemImplementation . . . . . . . . . . . . . . . . . . . . . . . . 109
+ 6.2.1 Frida-basedInjection . . . . . . . . . . . . . . . . . . . . . . . . . 109
+ 6.2.2 NetworkMonitoring . . . . . . . . . . . . . . . . . . . . . . . . . 111
+ 6
+6.2.3 ControllerAgentImplementation . . . . . . . . . . . . . . . . . . 113
+ 6.2.4 EventProcessing . . . . . . . . . . . . . . . . . . . . . . . . . . . 114
+ 6.3 FrontendImplementation. . . . . . . . . . . . . . . . . . . . . . . . . . . 115
+ 6.3.1 ComponentArchitecture . . . . . . . . . . . . . . . . . . . . . . . 116
+ 6.3.2 Real-timeDataVisualization . . . . . . . . . . . . . . . . . . . . 117
+ 6.3.3 UserInterfaceComponents. . . . . . . . . . . . . . . . . . . . . . 119
+ 6.4 IntegrationandCommunication . . . . . . . . . . . . . . . . . . . . . . . 122
+ 6.4.1 APICommunicationLayer . . . . . . . . . . . . . . . . . . . . . . 123
+ 6.4.2 Agent-BackendCoordination. . . . . . . . . . . . . . . . . . . . . 124
+ 6.4.3 ErrorHandlingandRecovery . . . . . . . . . . . . . . . . . . . . 125
+ 6.4.4 DataFlowCoordination . . . . . . . . . . . . . . . . . . . . . . . 126
+ 6.4.5 PerformanceOptimization . . . . . . . . . . . . . . . . . . . . . . 127
+ 6.4.6 SecurityConsiderations. . . . . . . . . . . . . . . . . . . . . . . . 128
+ 6.5 Summary . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 130
+ 7 TestingandQualityAssurance 131
+ 7.1 TestingStrategy. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 131
+ 7.1.1 TestingEnvironment . . . . . . . . . . . . . . . . . . . . . . . . . 131
+ 7.2 UnitTesting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 132
+ 7.2.1 BackendUnitTests . . . . . . . . . . . . . . . . . . . . . . . . . . 132
+ 7.2.2 FrontendUnitTests . . . . . . . . . . . . . . . . . . . . . . . . . 132
+ 7.2.3 AgentUnitTests . . . . . . . . . . . . . . . . . . . . . . . . . . . 133
+ 7.3 IntegrationTesting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 133
+ 7.3.1 APIIntegrationTests. . . . . . . . . . . . . . . . . . . . . . . . . 133
+ 7.3.2 DatabaseIntegrationTests . . . . . . . . . . . . . . . . . . . . . . 134
+ 7.3.3 Agent-BackendIntegration. . . . . . . . . . . . . . . . . . . . . . 134
+ 7.4 SystemTesting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 135
+ 7.4.1 FunctionalSystemTests . . . . . . . . . . . . . . . . . . . . . . . 135
+ 7.4.2 CompatibilityTesting . . . . . . . . . . . . . . . . . . . . . . . . 136
+ 7.4.3 SecurityTesting. . . . . . . . . . . . . . . . . . . . . . . . . . . . 137
+ 7.5 PerformanceTesting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 137
+ 7.5.1 ManualPerformanceObservations. . . . . . . . . . . . . . . . . . 137
+ 7.5.2 PerformanceLimitationsIdentified . . . . . . . . . . . . . . . . . 138
+ 7.6 ResultsandAnalysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 138
+ 7.6.1 TestingSummary . . . . . . . . . . . . . . . . . . . . . . . . . . . 138
+ 7.6.2 KnownIssuesandLimitations . . . . . . . . . . . . . . . . . . . . 139
+ 7.6.3 TestingChallenges . . . . . . . . . . . . . . . . . . . . . . . . . . 140
+ 7.6.4 QualityAssuranceMeasures . . . . . . . . . . . . . . . . . . . . . 140
+ 7.6.5 QualityAssurancePractices . . . . . . . . . . . . . . . . . . . . . 140
+ 7
+7.7 Conclusion. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 141
+ 8 ResultsandDiscussion 142
+ 8.1 SystemFunctionality . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 142
+ 8.1.1 CoreMonitoringCapabilities . . . . . . . . . . . . . . . . . . . . 142
+ 8.1.2 WebDashboardFunctionality . . . . . . . . . . . . . . . . . . . . 143
+ 8.1.3 BackendPerformance. . . . . . . . . . . . . . . . . . . . . . . . . 143
+ 8.2 PerformanceAnalysis . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 144
+ 8.2.1 EventProcessingPerformance . . . . . . . . . . . . . . . . . . . . 144
+ 8.2.2 ResourceUtilization . . . . . . . . . . . . . . . . . . . . . . . . . 144
+ 8.2.3 ScalabilityAnalysis . . . . . . . . . . . . . . . . . . . . . . . . . . 144
+ 8.3 UserWorkflowDemonstration . . . . . . . . . . . . . . . . . . . . . . . . 145
+ 8.3.1 MalwareAnalysisScenario . . . . . . . . . . . . . . . . . . . . . . 145
+ 8.3.2 LegitimateApplicationMonitoring . . . . . . . . . . . . . . . . . 146
+ 8.4 ComparisonwithExistingSolutions . . . . . . . . . . . . . . . . . . . . . 146
+ 8.4.1 FeatureComparison . . . . . . . . . . . . . . . . . . . . . . . . . 147
+ 8.4.2 AdvantagesofOS-Pulse . . . . . . . . . . . . . . . . . . . . . . . 147
+ 8.4.3 LimitationsComparedtoEstablishedTools . . . . . . . . . . . . 147
+ 8.5 LimitationsandChallenges . . . . . . . . . . . . . . . . . . . . . . . . . 148
+ 8.5.1 TechnicalLimitations . . . . . . . . . . . . . . . . . . . . . . . . . 148
+ 8.5.2 FunctionalLimitations . . . . . . . . . . . . . . . . . . . . . . . . 149
+ 8.5.3 DevelopmentChallenges . . . . . . . . . . . . . . . . . . . . . . . 149
+ 8.5.4 SecurityConsiderations. . . . . . . . . . . . . . . . . . . . . . . . 150
+ 8.5.5 LessonsLearned. . . . . . . . . . . . . . . . . . . . . . . . . . . . 150
+ 9 ConclusionandFutureWork 151
+ 9.1 SummaryofAchievements . . . . . . . . . . . . . . . . . . . . . . . . . . 151
+ 9.1.1 PrimaryAccomplishments . . . . . . . . . . . . . . . . . . . . . . 151
+ 9.1.2 TechnicalMilestonesAchieved . . . . . . . . . . . . . . . . . . . . 152
+ 9.2 Contributions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 153
+ 9.2.1 TechnicalContributions . . . . . . . . . . . . . . . . . . . . . . . 153
+ 9.2.2 ResearchContributions . . . . . . . . . . . . . . . . . . . . . . . . 154
+ 9.2.3 EducationalContributions . . . . . . . . . . . . . . . . . . . . . . 154
+ 9.3 Limitations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 155
+ 9.3.1 PlatformandCompatibilityLimitations . . . . . . . . . . . . . . 155
+ 9.3.2 ScalabilityandPerformanceLimitations . . . . . . . . . . . . . . 155
+ 9.3.3 FunctionalLimitations . . . . . . . . . . . . . . . . . . . . . . . . 156
+ 9.3.4 SecurityandDeploymentLimitations . . . . . . . . . . . . . . . . 157
+ 9.4 FutureEnhancementOpportunities . . . . . . . . . . . . . . . . . . . . . 157
+ 8
+9.4.1 PlatformExpansion. . . . . . . . . . . . . . . . . . . . . . . . . . 157
+ 9.4.2 AdvancedMonitoringFeatures. . . . . . . . . . . . . . . . . . . . 158
+ 9.4.3 IntelligentAnalysisFeatures . . . . . . . . . . . . . . . . . . . . . 158
+ 9.4.4 ScalabilityEnhancements . . . . . . . . . . . . . . . . . . . . . . 159
+ 9.4.5 UserExperienceEnhancements . . . . . . . . . . . . . . . . . . . 160
+ 9.4.6 SecurityandComplianceEnhancements . . . . . . . . . . . . . . 161
+ 9.4.7 ResearchDirections . . . . . . . . . . . . . . . . . . . . . . . . . . 161
+ 9.5 ConcludingRemarks . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 162
+ AAPIDocumentation 165
+ BProjectRepository 166
