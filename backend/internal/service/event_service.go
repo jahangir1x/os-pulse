@@ -113,9 +113,15 @@ func (s *EventService) StopMonitoring(req *models.StopMonitorRequest) error {
 		return fmt.Errorf("failed to update session: %w", err)
 	}
 
+	// Truncate events table
+	err = s.eventRepo.TruncateEvents()
+	if err != nil {
+		return fmt.Errorf("failed to truncate events: %w", err)
+	}
+
 	// Forward request to agent service
-	// return s.forwardStopMonitorRequest(req)
-	return nil
+	return s.forwardStopMonitorRequest(req)
+	// return nil
 }
 
 func (s *EventService) forwardStartMonitorRequest(req *models.StartMonitorRequest) error {

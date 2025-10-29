@@ -154,3 +154,12 @@ func (r *EventRepository) CreateNetworkEvents(sessionID string, networkEvent *mo
 
 	return nil
 }
+
+// TruncateEvents truncates the events table
+func (r *EventRepository) TruncateEvents() error {
+	result := r.db.Exec("TRUNCATE TABLE events")
+	if result.Error != nil {
+		return fmt.Errorf("failed to truncate events table: %w", result.Error)
+	}
+	return nil
+}
