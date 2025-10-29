@@ -1,2 +1,2 @@
 cd websockify
-python -m websockify --web ..\noVNC 6080 localhost:5909
+python -m websockify --web ..\noVNC 6080 localhost:5900
